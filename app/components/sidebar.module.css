@@ -1,0 +1,86 @@
+/* --- Main Sidebar Container --- */
+.sidebarContainer {
+    width: 280px;
+    height: 100vh;
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0; /* border-slate-200 */
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* --- Logo Section --- */
+.logoContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+}
+
+.logoIconWrapper {
+    background-color: #1e293b; /* bg-slate-800 */
+    color: #ffffff;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logoText {
+    font-size: 1.25rem; /* text-xl */
+    font-weight: 700; /* font-bold */
+    color: #1e293b; /* text-slate-800 */
+}
+
+/* --- Navigation --- */
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* ระยะห่างระหว่างเมนู */
+}
+
+.navLink {
+    text-decoration: none;
+}
+
+.navItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: #475569; /* text-slate-600 */
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.navText {
+    font-size: 1rem;
+    font-weight: 500; /* font-medium */
+}
+
+/* Hover state for inactive items */
+.navItem:not(.active):hover {
+    background-color: #f1f5f9; /* hover:bg-slate-100 */
+    color: #1e293b; /* hover:text-slate-800 */
+}
+
+/* --- Active State --- */
+.active {
+    background-color: #3b82f6; /* bg-blue-500 */
+    color: #ffffff;
+    font-weight: 600; /* font-semibold */
+    box-shadow: 0 4px 14px -4px rgba(59, 130, 246, 0.5);
+}
+
+/* --- Logout Section --- */
+.logoutSection {
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9; /* border-slate-100 */
+}
+
+.logoutButton:hover {
+    background-color: #fee2e2; /* hover:bg-red-100 */
+    color: #dc2626; /* hover:text-red-600 */
+}

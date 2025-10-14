@@ -1,0 +1,99 @@
+.pageContainer {
+    padding: 2rem;
+    background-color: #f8fafc;
+    min-height: 100%;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.headerTitle {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.settingsButton {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #4b5563;
+    transition-property: color;
+    transition-duration: 150ms;
+    margin-left: auto;
+}
+
+.settingsButton:hover {
+    color: #4f46e5;
+}
+
+
+/* --- Student Grid Section --- */
+.studentGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+
+/* --- Student Card --- */
+.studentCard {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.studentCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.imageGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.imagePlaceholder {
+    background-color: #0ea5e9;
+    border-radius: 0.5rem;
+    aspect-ratio: 1 / 1;
+}
+
+.studentInfo {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #334155;
+    background-color: #f1f5f9;
+    border-radius: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 1280px) {
+    .studentGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .studentGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .studentGrid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}

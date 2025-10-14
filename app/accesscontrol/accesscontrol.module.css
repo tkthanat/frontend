@@ -1,0 +1,337 @@
+.pageContainer {
+    padding: 2rem;
+    background-color: #f8fafc;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.headerTitle {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.settingsButton {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #4b5563;
+    transition-property: color;
+    transition-duration: 150ms;
+    margin-left: auto;
+}
+.settingsButton:hover {
+    color: #4f46e5;
+}
+
+.cameraGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.cameraBox {
+    position: relative;
+    background-color: #f1f5f9;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+}
+
+.videoFeed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.75rem;
+    transform: scaleX(-1);
+}
+
+/* Error Message */
+.errorOverlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: #ef4444;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.errorOverlay p {
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+.cameraOverlay {
+    position: absolute;
+    inset: 0;
+    padding: 0.75rem;
+    color: #94a3b8;
+}
+
+.cameraOverlay {
+    position: absolute;
+    inset: 0;
+    padding: 0.75rem;
+    color: #94a3b8;
+}
+
+.cameraSettingsButton {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    background: rgba(255, 255, 255, 0.7);
+    color: #334155;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cameraSettingsButton:hover {
+    background: white;
+    transform: scale(1.1) rotate(45deg);
+}
+
+.recIndicator {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+.recDot {
+    width: 0.6rem;
+    height: 0.6rem;
+    background-color: #ef4444;
+    border-radius: 50%;
+}
+
+.videoIcon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* --- Control Panel --- */
+.controlPanel {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    color: #334155;
+}
+
+.classText {
+    font-weight: 700;
+}
+
+.lateTag {
+    border: 1px solid #f87171;
+    color: #ef4444;
+    background-color: #fee2e2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.controlButton {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.startButton {
+    border: 1px solid #22c55e;
+    color: #22c55e;
+    margin-left: auto;
+}
+.startButton:hover {
+    background-color: #22c55e;
+    color: #fff;
+}
+
+.stopButton {
+    border: 1px solid #ef4444;
+    color: #ef4444;
+}
+.stopButton:hover {
+    background-color: #ef4444;
+    color: #fff;
+}
+
+/* --- Attendance Log Card --- */
+.logCard {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+.logHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.logTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.exportButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #3b82f6;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 9999px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.exportButton:hover {
+    background-color: #2563eb;
+}
+
+/* --- Attendance Table --- */
+.attendanceTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.attendanceTable th, .attendanceTable td {
+    padding: 0.75rem 0.5rem;
+    text-align: left;
+    color: #334155;
+}
+
+.attendanceTable th {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.attendanceTable tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.attendanceTable tbody tr:last-child {
+    border-bottom: none;
+}
+
+.statusPresent {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.statusLate {
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.modalBackdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.modalContent {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2);
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modalContent h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.modalContent p {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+}
+
+.closeButton {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.deviceSelect {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    color: #000;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.confirmButton {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.confirmButton:hover {
+    background-color: #2563eb;
+}
