@@ -1,26 +1,25 @@
-import './globals.css';
-import Sidebar from './components/sidebar';
+// app/layout.tsx <-- ไฟล์เดิมที่ถูกแก้ไข
 
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-export const metadata = {
-  title: 'Face Recognition',
-  description: 'Face Detection & Face Recognition Attendance System',
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Face Recognition",
+  description: "Face Detection & Face Recognition System",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body>
-        <div className="flex h-screen bg-gray-50"> 
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto">
-            {children}
-          </main>
-        </div>
+      <body className={inter.className}>
+        {children}
       </body>
     </html>
   );

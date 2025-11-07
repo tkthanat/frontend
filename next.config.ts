@@ -10,7 +10,7 @@ const nextConfig = {
         // เมื่อมีคนเข้าถึงเส้นทางนี้
         source: '/', 
         // ให้เปลี่ยนไปที่เส้นทางนี้แทน
-        destination: '/accesscontrol', 
+        destination: '/login', 
         // ต้องเปลี่ยนเส้นทางแบบถาวรหรือไม่ (false สำหรับชั่วคราว/เปลี่ยนได้)
         permanent: false, 
       },

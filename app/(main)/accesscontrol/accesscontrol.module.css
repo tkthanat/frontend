@@ -1,8 +1,10 @@
+/* --- Base Layout --- */
 .pageContainer {
     padding: 2rem;
     background-color: #f8fafc;
 }
 
+/* --- Header Section --- */
 .header {
     display: flex;
     justify-content: space-between;
@@ -16,19 +18,7 @@
     color: #1e293b;
 }
 
-.settingsButton {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    color: #4b5563;
-    transition-property: color;
-    transition-duration: 150ms;
-    margin-left: auto;
-}
-.settingsButton:hover {
-    color: #4f46e5;
-}
-
+/* --- Camera Grid & Box --- */
 .cameraGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -50,10 +40,8 @@
     height: 100%;
     object-fit: cover;
     border-radius: 0.75rem;
-    transform: scaleX(-1);
 }
 
-/* Error Message */
 .errorOverlay {
     display: flex;
     flex-direction: column;
@@ -62,7 +50,7 @@
     height: 100%;
     text-align: center;
     color: #ef4444;
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(241, 245, 249, 0.9);
     border-radius: 0.75rem;
     padding: 1rem;
 }
@@ -72,6 +60,7 @@
     font-weight: 500;
 }
 
+/* Overlay ของ UI (ปุ่ม REC, Settings) */
 .cameraOverlay {
     position: absolute;
     inset: 0;
@@ -79,11 +68,21 @@
     color: #94a3b8;
 }
 
-.cameraOverlay {
+.recIndicator {
     position: absolute;
-    inset: 0;
-    padding: 0.75rem;
-    color: #94a3b8;
+    top: 0.75rem;
+    left: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+.recDot {
+    width: 0.6rem;
+    height: 0.6rem;
+    background-color: #ef4444;
+    border-radius: 50%;
 }
 
 .cameraSettingsButton {
@@ -108,29 +107,58 @@
     transform: scale(1.1) rotate(45deg);
 }
 
-.recIndicator {
+
+/* ✨ --- เพิ่ม/แก้ไข CSS สำหรับ AI Overlay --- ✨ */
+.aiOverlayContainer {
     position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-}
-.recDot {
-    width: 0.6rem;
-    height: 0.6rem;
-    background-color: #ef4444;
-    border-radius: 50%;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
 }
 
-.videoIcon {
+.aiBox {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    border-width: 3px; /* ความหนาของเส้น */
+    border-style: solid;
+    border-radius: 0.25rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    transition: all 0.1s ease-out;
 }
+
+/* สีสำหรับกล่อง Unknown */
+.unknownBox {
+    border-color: #ef4444; /* red-500 */
+}
+
+/* สีสำหรับกล่อง Matched */
+.matchedBox {
+    border-color: #22c55e; /* green-500 */
+}
+
+
+.aiNameTag {
+    position: absolute;
+    bottom: 100%;
+    left: -3px; /* ชดเชย border */
+    color: white;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 0.25rem 0.25rem 0 0;
+}
+
+/* สีสำหรับ Tag Unknown */
+.unknownTag {
+    background-color: #ef4444; /* red-500 */
+}
+
+/* สีสำหรับ Tag Matched */
+.matchedTag {
+    background-color: #22c55e; /* green-500 */
+}
+/* ✨ --- จบส่วน AI Overlay --- ✨ */
+
 
 /* --- Control Panel --- */
 .controlPanel {
@@ -261,6 +289,7 @@
     font-weight: 500;
 }
 
+/* --- Modal Styles --- */
 .modalBackdrop {
     position: fixed;
     inset: 0;
@@ -314,7 +343,6 @@
     padding: 0.75rem;
     border: 1px solid #cbd5e1;
     border-radius: 0.5rem;
-    color: #000;
     font-size: 1rem;
     margin-bottom: 1.5rem;
 }

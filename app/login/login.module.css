@@ -1,0 +1,154 @@
+/* --- CSS Variables for easy themeing --- */
+:root {
+    --bg-color: #f8fafc; /* bg-slate-50 */
+    --card-color: #ffffff;
+    --primary-color: #3b82f6; /* blue-500 */
+    --primary-hover-color: #2563eb; /* blue-600 */
+    --text-primary: #1e293b; /* slate-800 */
+    --text-secondary: #64748b; /* slate-500 */
+    --input-bg-color: #f1f5f9; /* slate-100 */
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    padding: 1rem;
+}
+
+.loginBox {
+    width: 100%;
+    max-width: 420px;
+    background-color: var(--card-color);
+    padding: 3rem;
+    border-radius: 1rem; /* rounded-xl */
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+}
+
+/* --- Header Section --- */
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+}
+
+.header h2 {
+    font-size: 1.875rem; /* text-3xl */
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.header p {
+    color: var(--text-secondary);
+}
+
+/* --- Form Section --- */
+.form {
+    display: flex;
+    flex-direction: column;
+}
+
+.inputGroup {
+    display: flex;
+    align-items: center;
+    background-color: var(--input-bg-color);
+    border-radius: 0.5rem; /* rounded-lg */
+    margin-bottom: 1rem;
+    padding: 0 0.75rem;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.inputGroup:focus-within {
+    border-color: var(--primary-color);
+}
+
+.inputGroup input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 0.9rem 0.75rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.inputGroup input:focus {
+    outline: none;
+}
+
+.icon {
+    color: var(--text-secondary);
+}
+
+/* --- Actions (Remember me / Forgot) --- */
+.actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem; /* text-sm */
+}
+
+.rememberMe {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.link {
+    color: var(--primary-color);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+/* --- Button --- */
+.loginButton {
+    padding: 0.9rem;
+    border: none;
+    border-radius: 0.5rem;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.loginLink {
+    color: white;
+    text-decoration: none;
+}
+
+.loginButton:hover {
+    background-color: var(--primary-hover-color);
+}
+
+/* --- Footer --- */
+.footer {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}

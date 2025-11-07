@@ -1,0 +1,366 @@
+/* --- Base Layout --- */
+.pageContainer {
+    padding: 2rem;
+    background-color: #f8fafc;
+    min-height: 100%;
+}
+
+/* --- Header Section --- */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+.headerTitle {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+.headerActions {
+    display: flex;
+    gap: 0.75rem;
+}
+.settingsButton,
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.settingsButton {
+    background-color: #fff;
+    color: #475569;
+}
+.settingsButton:hover {
+    background-color: #f1f5f9;
+}
+.addButton {
+    background-color: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+}
+.addButton:hover {
+    background-color: #2563eb;
+}
+
+/* --- Student Grid Section --- */
+.studentGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+/* --- Student Card --- */
+.studentCard {
+    position: relative;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer; 
+}
+.studentCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+}
+
+.deleteButton {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background-color: #fee2e2;
+    color: #ef4444;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.2s;
+    z-index: 10;
+}
+.studentCard:hover .deleteButton {
+    opacity: 1;
+}
+.deleteButton:hover {
+    background-color: #ef4444;
+    color: #fff;
+}
+
+.imageGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+.imagePlaceholder {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    border-radius: 0.5rem;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.studentImage {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    background-color: #f1f5f9;
+}
+
+.studentInfo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0;
+    background-color: #f8fafc;
+    border-radius: 0.5rem;
+}
+.studentId {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+.studentName {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+
+/* --- Modal Styles --- */
+.modalBackdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.modalContent {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2);
+    position: relative;
+    animation: scaleIn 0.3s ease-out;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+.modalContent h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+}
+.closeButton {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 50%;
+    padding: 0.25rem;
+    transition: background-color 0.2s;
+}
+.closeButton:hover {
+    background-color: #f1f5f9;
+}
+.modalForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+.formGroup {
+    display: flex;
+    flex-direction: column;
+}
+.formGroup label {
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 0.5rem;
+}
+
+/* ✨ [แก้ไข] เพิ่มสีตัวอักษร (สีดำ) */
+.formGroup input[type="text"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    color: #111827; /* gray-900 */
+}
+.formGroup input[type="text"]::placeholder {
+    color: #9ca3af; /* gray-400 */
+}
+.formGroup input[type="text"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.fileDropArea {
+    border: 2px dashed #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+.fileDropArea:hover {
+    border-color: #3b82f6;
+    background-color: #f8fafc;
+}
+.fileDropArea svg {
+    margin: 0 auto 0.5rem auto;
+    color: #3b82f6;
+}
+
+.filePreview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    max-height: 100px;
+    overflow-y: auto;
+    background-color: #f8fafc;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.fileChip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #e2e8f0;
+    color: #334155;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+}
+.fileChip button {
+    background: #94a3b8;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.imagePreviewContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #f8fafc;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+}
+.imagePreviewItem {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+.imagePreviewItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.removeImageButton {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.imagePreviewItem:hover .removeImageButton {
+    opacity: 1;
+}
+.removeImageButton:hover {
+    background: rgba(239, 68, 68, 0.8);
+}
+
+.errorText {
+    color: #ef4444;
+    font-weight: 500;
+    text-align: center;
+}
+.submitButton {
+    padding: 0.75rem;
+    border: none;
+    border-radius: 0.5rem;
+    background-color: #3b82f6;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem; 
+}
+.submitButton:hover {
+    background-color: #2563eb;
+}
+.submitButton:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spinner {
+    animation: spin 1s linear infinite;
+}

@@ -51,7 +51,7 @@ const Sidebar = () => {
 
       {/* --- Logout Section --- */}
       <div className={styles.logoutSection}>
-        <Link href="/logout" className={styles.navLink}>
+        <Link href="/login" className={styles.navLink}>
           <div className={`${styles.navItem} ${styles.logoutButton}`}>
             <LogOut size={20} />
             <span className={styles.navText}>Logout</span>

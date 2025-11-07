@@ -38,7 +38,7 @@
 .nav {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem; /* ระยะห่างระหว่างเมนู */
+    gap: 0.8rem; /* ระยะห่างระหว่างเมนู */
 }
 
 .navLink {
