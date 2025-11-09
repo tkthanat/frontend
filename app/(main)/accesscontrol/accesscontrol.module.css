@@ -108,7 +108,7 @@
 }
 
 
-/* ✨ --- เพิ่ม/แก้ไข CSS สำหรับ AI Overlay --- ✨ */
+/* --- AI Overlay --- */
 .aiOverlayContainer {
     position: absolute;
     inset: 0;
@@ -119,19 +119,17 @@
 
 .aiBox {
     position: absolute;
-    border-width: 3px; /* ความหนาของเส้น */
+    border-width: 3px;
     border-style: solid;
     border-radius: 0.25rem;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
     transition: all 0.1s ease-out;
 }
 
-/* สีสำหรับกล่อง Unknown */
 .unknownBox {
     border-color: #ef4444; /* red-500 */
 }
 
-/* สีสำหรับกล่อง Matched */
 .matchedBox {
     border-color: #22c55e; /* green-500 */
 }
@@ -140,7 +138,7 @@
 .aiNameTag {
     position: absolute;
     bottom: 100%;
-    left: -3px; /* ชดเชย border */
+    left: -3px;
     color: white;
     padding: 0.25rem 0.5rem;
     font-size: 0.875rem;
@@ -148,16 +146,14 @@
     border-radius: 0.25rem 0.25rem 0 0;
 }
 
-/* สีสำหรับ Tag Unknown */
 .unknownTag {
     background-color: #ef4444; /* red-500 */
 }
 
-/* สีสำหรับ Tag Matched */
 .matchedTag {
     background-color: #22c55e; /* green-500 */
 }
-/* ✨ --- จบส่วน AI Overlay --- ✨ */
+/* --- จบส่วน AI Overlay --- */
 
 
 /* --- Control Panel --- */
@@ -168,10 +164,7 @@
     margin-bottom: 2rem;
     font-size: 1rem;
     color: #334155;
-}
-
-.classText {
-    font-weight: 700;
+    flex-wrap: wrap; 
 }
 
 .lateTag {
@@ -192,13 +185,17 @@
     cursor: pointer;
     transition: all 0.2s;
 }
+.controlButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 .startButton {
     border: 1px solid #22c55e;
     color: #22c55e;
     margin-left: auto;
 }
-.startButton:hover {
+.startButton:hover:not(:disabled) {
     background-color: #22c55e;
     color: #fff;
 }
@@ -207,7 +204,7 @@
     border: 1px solid #ef4444;
     color: #ef4444;
 }
-.stopButton:hover {
+.stopButton:hover:not(:disabled) {
     background-color: #ef4444;
     color: #fff;
 }
@@ -258,36 +255,30 @@
     width: 100%;
     border-collapse: collapse;
 }
-
 .attendanceTable th, .attendanceTable td {
     padding: 0.75rem 0.5rem;
     text-align: left;
     color: #334155;
 }
-
+.tableCellText { color: #334155; }
+.tableCellStatus { font-weight: 600; }
 .attendanceTable th {
     font-weight: 500;
     font-size: 0.875rem;
     color: #64748b;
 }
+.attendanceTable tbody tr { border-bottom: 1px solid #f1f5f9; }
+.attendanceTable tbody tr:last-child { border-bottom: none; }
+.statusPresent { color: #16a34a; font-weight: 500; }
+.statusLate { color: #dc2626; font-weight: 500; }
 
-.attendanceTable tbody tr {
-    border-bottom: 1px solid #f1f5f9;
+/* ✨ [ใหม่] สไตล์สำหรับแถว "No logs" */
+.noLogs {
+    text-align: center;
+    padding: 1rem;
+    color: #64748b; /* slate-500 */
 }
 
-.attendanceTable tbody tr:last-child {
-    border-bottom: none;
-}
-
-.statusPresent {
-    color: #16a34a;
-    font-weight: 500;
-}
-
-.statusLate {
-    color: #dc2626;
-    font-weight: 500;
-}
 
 /* --- Modal Styles --- */
 .modalBackdrop {
@@ -299,7 +290,6 @@
     justify-content: center;
     z-index: 50;
 }
-
 .modalContent {
     background-color: white;
     padding: 2rem;
@@ -310,24 +300,20 @@
     position: relative;
     animation: fadeIn 0.3s ease-out;
 }
-
 @keyframes fadeIn {
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
 }
-
 .modalContent h2 {
     font-size: 1.5rem;
     font-weight: 600;
     color: #1e293b;
     margin-bottom: 0.5rem;
 }
-
 .modalContent p {
     color: #64748b;
     margin-bottom: 1.5rem;
 }
-
 .closeButton {
     position: absolute;
     top: 1rem;
@@ -337,7 +323,6 @@
     color: #94a3b8;
     cursor: pointer;
 }
-
 .deviceSelect {
     width: 100%;
     padding: 0.75rem;
@@ -346,7 +331,6 @@
     font-size: 1rem;
     margin-bottom: 1.5rem;
 }
-
 .confirmButton {
     width: 100%;
     padding: 0.75rem;
@@ -359,7 +343,68 @@
     cursor: pointer;
     transition: background-color 0.2s;
 }
-
 .confirmButton:hover {
     background-color: #2563eb;
+}
+
+/* --- สไตล์สำหรับนาฬิกา Real-time --- */
+.realTimeClock {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #334155;
+    background-color: #f1f5f9;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e2e8f0;
+    margin-right: 0; 
+}
+
+/* --- สไตล์สำหรับ Control Panel Inputs --- */
+.controlGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #334155;
+}
+.controlInput {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    width: 140px; 
+}
+.controlInput:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+.controlInput[type="time"] {
+    width: 110px;
+    font-size: 1rem;
+}
+
+/* ✨ --- [ใหม่] สไตล์สำหรับ Date Picker --- ✨ */
+.datePickerContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    margin-right: 1rem; 
+}
+.datePickerContainer label {
+    font-weight: 500;
+    color: #334155;
+}
+.dateInput {
+    padding: 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #334155;
 }

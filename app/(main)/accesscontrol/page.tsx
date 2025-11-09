@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Settings, Download, X, VideoOff } from 'lucide-react';
 import styles from './accesscontrol.module.css';
+// ❌ ลบ useClass ออก (เราไม่ใช้ Pop-up เลือกคลาสแล้ว)
 
-// ✨ ตั้งค่า URL ของ Backend (FastAPI ปกติรันที่ 8000)
 const BACKEND_URL = 'http://localhost:8000';
 const WS_BACKEND_URL = 'ws://localhost:8000';
 
@@ -61,27 +61,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSelect
 // --- (จบ SettingsModal) ---
 
 
-// --- (Custom Hook สำหรับ WebSocket AI Results - เหมือนเดิม) ---
-interface AIResult {
-  name: string; // ชื่อจริง หรือ "Unknown"
-  box: [number, number, number, number]; // [x, y, w, h]
-  similarity?: number | null;
-  matched: boolean;
-  display_name: string; // ชื่อ + % หรือ "Unknown"
-}
-interface AIData {
-  results: AIResult[];
-  ai_width: number;
-  ai_height: number;
-}
-
+// --- (Custom Hook WebSocket - เหมือนเดิม) ---
+interface AIResult { name: string; box: [number, number, number, number]; similarity?: number | null; matched: boolean; display_name: string; }
+interface AIData { results: AIResult[]; ai_width: number; ai_height: number; }
 const useAIResults = (camId: string) => {
   const [data, setData] = useState<AIData>({ results: [], ai_width: 640, ai_height: 480 });
   const wsRef = useRef<WebSocket | null>(null);
-
   useEffect(() => {
-    if (!camId) return;
+    if (!camId) { return; }
     const connect = () => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) { return; }
       const ws = new WebSocket(`${WS_BACKEND_URL}/ws/ai_results/${camId}`);
       wsRef.current = ws;
       ws.onopen = () => console.log(`[WS AI ${camId}] Connected.`);
@@ -92,13 +81,17 @@ const useAIResults = (camId: string) => {
       ws.onerror = (err) => console.error(`[WS AI ${camId}] Error:`, err);
       ws.onclose = () => {
         console.log(`[WS AI ${camId}] Disconnected. Reconnecting in 3s...`);
+        wsRef.current = null;
         setData({ results: [], ai_width: 640, ai_height: 480 });
         setTimeout(connect, 3000);
       };
     };
     connect();
     return () => {
-      wsRef.current?.close(1000, "Component unmounting");
+      if (wsRef.current) {
+        wsRef.current.close(1000, "Component unmounting");
+        wsRef.current = null;
+      }
     };
   }, [camId]);
   return data;
@@ -112,13 +105,11 @@ interface CameraBoxProps {
   streamKey: string;
   onSettingsClick: () => void;
 }
-
 const CameraBox: React.FC<CameraBoxProps> = ({ camId, streamKey, onSettingsClick }) => {
   const [error, setError] = useState(false);
   const { results: aiResults, ai_width, ai_height } = useAIResults(camId);
   const containerRef = useRef<HTMLDivElement>(null);
-  const streamUrl = `${BACKEND_URL}/cameras/${camId}/mjpeg?key=${streamKey}`;
-
+  const streamUrl = (streamKey) ? `${BACKEND_URL}/cameras/${camId}/mjpeg?key=${streamKey}` : null;
   const calculateBoxStyle = (box: [number, number, number, number]): React.CSSProperties => {
     if (!box || !Array.isArray(box) || box.length < 4) { return { display: 'none' }; }
     if (!containerRef.current) return { display: 'none' };
@@ -132,10 +123,11 @@ const CameraBox: React.FC<CameraBoxProps> = ({ camId, streamKey, onSettingsClick
       width: `${w * scaleX}px`, height: `${h * scaleY}px`,
     };
   };
-
   return (
     <div className={styles.cameraBox} ref={containerRef}>
-      {error ? (
+      {!streamUrl ? (
+        <div className={styles.errorOverlay}><VideoOff size={48} /><p>Stream error or no source.</p></div>
+      ) : error ? (
         <div className={styles.errorOverlay}><VideoOff size={48} /><p>Stream error or no source.</p></div>
       ) : (
         <img
@@ -159,100 +151,124 @@ const CameraBox: React.FC<CameraBoxProps> = ({ camId, streamKey, onSettingsClick
       </div>
       <div className={styles.cameraOverlay}>
         <div className={styles.recIndicator}><div className={styles.recDot}></div><span>REC</span></div>
-        <button className={styles.cameraSettingsButton} onClick={onSettingsClick}><Settings size={20} /></button>
+        <button 
+          className={styles.cameraSettingsButton} 
+          onClick={onSettingsClick}
+        >
+          <Settings size={20} />
+        </button>
       </div>
     </div>
   );
 };
+// --- (จบ CameraBox) ---
 
 
-// --- ✨ [ใหม่] Interface สำหรับ Log ที่ดึงมาจาก Backend ---
-interface LogEntry {
-  log_id: number;
-  user_id: number;
-  user_name: string;
-  student_code: string;
-  action: "enter" | "exit";
-  timestamp: string; // ISO string
-  confidence: number | null;
-}
+// --- Interface สำหรับ Log ---
+interface LogEntry { log_id: number; user_id: number; user_name: string; student_code: string; action: "enter" | "exit"; timestamp: string; confidence: number | null; }
 
-// --- (Main Page Component - แก้ไขใหม่) ---
+// --- (Main Page Component) ---
 const AccessControlPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTargetCamera, setCurrentTargetCamera] = useState<'entrance' | 'exit' | null>(null);
   const [selectedSources, setSelectedSources] = useState({ entrance: '', exit: '' });
-
-  // --- ✨ [ใหม่] สร้าง State สำหรับเก็บ Logs ---
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  const [className, setClassName] = useState('SP403-61');
+  const [lateTime, setLateTime] = useState('09:30');
+  
+  // ✨ [ใหม่] State สำหรับวันที่เลือก และเช็คว่าเป็น "วันนี้" หรือไม่
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const isViewingToday = selectedDate.toDateString() === new Date().toDateString();
 
-  // --- ✨ [ใหม่] 1. ดึงข้อมูล Log ทั้งหมดที่มีอยู่ตอนโหลดหน้า ---
+  // ✨ [ใหม่] Helper function: แปลง Date เป็น "YYYY-MM-DD"
+  const formatDateForAPI = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
+
+  // ✨ [แก้ไข] fetchInitialLogs: ให้ดึงข้อมูลตาม selectedDate
   const fetchInitialLogs = useCallback(async () => {
+    // (เราจะสมมติว่า API /attendance/logs กรองตาม subject_id ได้
+    // แต่ในโค้ด main.py ล่าสุด มันกรองตาม subject_id... ซึ่งเราไม่มี)
+    // ดังนั้น เราจะโหลด Log ทั้งหมดของวันนั้นๆ มาก่อน
+    const dateString = formatDateForAPI(selectedDate);
+    
     try {
-      const response = await fetch(`${BACKEND_URL}/attendance/logs`);
+      const response = await fetch(`${BACKEND_URL}/attendance/logs?start_date=${dateString}&end_date=${dateString}`);
       if (!response.ok) throw new Error("Failed to fetch logs");
       const data: LogEntry[] = await response.json();
-      setLogs(data);
-      console.log("Fetched initial logs:", data);
+      setLogs(data); // เซ็ต Log ของวันที่เลือก
+      console.log(`Fetched logs for ${dateString}:`, data);
     } catch (err) {
       console.error("Failed to fetch initial logs:", err);
     }
-  }, []);
+  }, [selectedDate]); // ✨ ทำงานใหม่เมื่อ selectedDate เปลี่ยน
 
-  // --- ✨ [ใหม่] 2. ฟังก์ชันสำหรับ Polling (เรียกซ้ำๆ) เพื่อดึง Log ใหม่ ---
+  // ✨ [แก้ไข] pollNewLogs: ให้ Poll ต่อเมื่อดู "วันนี้"
   const pollNewLogs = useCallback(async () => {
+    if (!isViewingToday) return; // ถ้าไม่ได้ดู "วันนี้" ก็ไม่ต้อง poll
+
     try {
       const response = await fetch(`${BACKEND_URL}/attendance/poll`);
       if (!response.ok) throw new Error("Failed to poll logs");
       const newLogs: LogEntry[] = await response.json();
-
+      
       if (newLogs.length > 0) {
         console.log("Polled new logs:", newLogs);
-        // เพิ่ม Log ใหม่เข้าไปด้านบนสุดของ List
+        // เพิ่ม Log ใหม่เข้าไป (เพราะเรากำลังดู "วันนี้")
         setLogs(prevLogs => [...newLogs, ...prevLogs]);
       }
     } catch (err) {
       console.error("Failed to poll new logs:", err);
     }
-  }, []);
+  }, [isViewingToday]); // ✨ ทำงานใหม่เมื่อ isViewingToday เปลี่ยน
 
-  // --- ✨ [ใหม่] 3. สั่งให้ฟังก์ชันทำงาน ---
+  // ✨ [แก้ไข] useEffect สำหรับ Polling
   useEffect(() => {
-    // 1. ดึงข้อมูลเก่ามาก่อน
-    fetchInitialLogs();
-
-    // 2. เริ่ม Polling ทุก 3 วินาที
-    // (ล้าง interval เก่าก่อน ถ้ามี)
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    fetchInitialLogs(); // 1. ดึง Log ของวันที่เลือก (จะทำงานเมื่อ selectedDate เปลี่ยน)
     
-    pollIntervalRef.current = setInterval(pollNewLogs, 3000); // 3000ms = 3 วินาที
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
 
-    // 3. Cleanup: หยุด Polling เมื่อออกจากหน้านี้
+    // 2. ถ้ากำลังดู "วันนี้" ให้เริ่ม Polling
+    if (isViewingToday) {
+      pollIntervalRef.current = setInterval(pollNewLogs, 3000); 
+    }
+
+    // 3. Cleanup: หยุด Polling
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
     };
-  }, [fetchInitialLogs, pollNewLogs]); // ใส่ dependencies
+  }, [fetchInitialLogs, pollNewLogs, isViewingToday]); // ✨ ทำงานใหม่เมื่อ isViewingToday เปลี่ยน
 
-  // (useEffect สำหรับดึง config กล้อง - เหมือนเดิม)
+  // (useEffect สำหรับ config กล้อง)
   useEffect(() => {
     const fetchCurrentConfig = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/cameras/config`);
-        const data: { mapping: { entrance: string, exit: string } } = await response.json();
-        setSelectedSources(data.mapping);
-      } catch (err) { console.error("Failed to fetch camera config:", err); }
-    };
-    fetchCurrentConfig();
+        try {
+          const response = await fetch(`${BACKEND_URL}/cameras/config`);
+          const data: { mapping: { entrance: string, exit: string } } = await response.json();
+          setSelectedSources(data.mapping);
+        } catch (err) { console.error("Failed to fetch camera config:", err); }
+      };
+      fetchCurrentConfig();
+  }, []);
+  
+  // (useEffect สำหรับนาฬิกา)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => { clearInterval(timer); };
   }, []);
 
+  // (โค้ด handleOpenModal และ handleSelectDevice)
   const handleOpenModal = (target: 'entrance' | 'exit') => {
     setCurrentTargetCamera(target);
     setIsModalOpen(true);
   };
-
   const handleSelectDevice = async (src: string) => {
     if (currentTargetCamera) {
       try {
@@ -263,8 +279,28 @@ const AccessControlPage = () => {
           body: JSON.stringify(newMapping),
         });
         if (!response.ok) throw new Error("Failed to configure backend");
-        setSelectedSources(newMapping);
+        setSelectedSources(newMapping); 
       } catch (err) { console.error("Failed to set new camera source:", err); }
+    }
+  };
+
+  // (ฟังก์ชันสำหรับปุ่ม Start/Stop)
+  const handleStartAttendance = async () => {
+    try {
+      await fetch(`${BACKEND_URL}/attendance/start`, { method: 'POST' });
+      alert('Attendance Started!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to start attendance.');
+    }
+  };
+  const handleStopAttendance = async () => {
+    try {
+      await fetch(`${BACKEND_URL}/attendance/stop`, { method: 'POST' });
+      alert('Attendance Stopped!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to stop attendance.');
     }
   };
 
@@ -291,17 +327,69 @@ const AccessControlPage = () => {
         />
       </div>
       
+      {/* (Control Panel - นำช่อง Input กลับมา) */}
       <div className={styles.controlPanel}>
-        <span>Class : <span className={styles.classText}>SP403-61</span></span>
-        <span>After 9.30 :</span>
-        <span className={styles.lateTag}>Late</span>
-        <button className={`${styles.controlButton} ${styles.startButton}`}>Start Attendance</button>
-        <button className={`${styles.controlButton} ${styles.stopButton}`}>Stop Attendance</button>
+        <div className={styles.controlGroup}>
+          <label htmlFor="className">Class :</label>
+          <input
+            type="text"
+            id="className"
+            className={styles.controlInput}
+            value={className}
+            onChange={(e) => setClassName(e.target.value)}
+          />
+        </div>
+        
+        <div className={styles.controlGroup}>
+          <label htmlFor="lateTime">After :</label>
+          <input
+            type="time" 
+            id="lateTime"
+            className={styles.controlInput}
+            value={lateTime}
+            onChange={(e) => setLateTime(e.target.value)}
+          />
+          <span className={styles.lateTag}>Late</span>
+        </div>
+        
+        <span className={styles.realTimeClock}>
+          {currentTime.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+          })}
+        </span>
+
+        <button 
+          className={`${styles.controlButton} ${styles.startButton}`}
+          onClick={handleStartAttendance}
+          disabled={!isViewingToday} // ✨ [แก้ไข] ปิดปุ่มถ้าดูย้อนหลัง
+        >
+          Start Attendance
+        </button>
+        <button 
+          className={`${styles.controlButton} ${styles.stopButton}`}
+          onClick={handleStopAttendance}
+          disabled={!isViewingToday} // ✨ [แก้ไข] ปิดปุ่มถ้าดูย้อนหลัง
+        >
+          Stop Attendance
+        </button>
       </div>
       
       <div className={styles.logCard}>
         <div className={styles.logHeader}>
           <h2 className={styles.logTitle}>Attendance Log</h2>
+          
+          {/* ✨ [ใหม่] เพิ่ม Date Picker */}
+          <div className={styles.datePickerContainer}>
+            <label htmlFor="logDate">Select Date:</label>
+            <input
+              type="date"
+              id="logDate"
+              className={styles.dateInput}
+              value={formatDateForAPI(selectedDate)}
+              onChange={(e) => setSelectedDate(new Date(e.target.value))}
+            />
+          </div>
+
           <button className={styles.exportButton}>
             <Download size={16} />
             <span>Export data</span>
@@ -318,25 +406,31 @@ const AccessControlPage = () => {
             </tr>
           </thead>
           <tbody>
-            {/* ✨ [ใหม่] Map ข้อมูลจาก State 'logs' แทน Mock Data */}
-            {logs.map((log) => (
-              <tr key={log.log_id}>
-                {/* ✨ [ใหม่] แปลง ISO date เป็นเวลาที่อ่านง่าย */}
-                <td className={styles.tableCellText}>
-                  {new Date(log.timestamp).toLocaleTimeString('en-US', {
-                    hour: '2-digit', minute: '2-digit', hour12: true 
-                  })}
-                </td>
-                <td className={styles.tableCellText}>{log.user_name}</td>
-                <td className={styles.tableCellText}>{log.student_code}</td>
-                <td className={styles.tableCellStatus}>
-                  {/* ✨ [ใหม่] เปลี่ยนสีตาม 'action' */}
-                  <span className={log.action === 'enter' ? styles.statusPresent : styles.statusLate}>
-                    {log.action}
-                  </span>
+            {/* ✨ [ใหม่] เพิ่มเงื่อนไข ถ้า logs ว่าง */}
+            {logs.length === 0 ? (
+              <tr>
+                <td colSpan={4} className={styles.noLogs}>
+                  No logs found for this day.
                 </td>
               </tr>
-            ))}
+            ) : (
+              logs.map((log) => (
+                <tr key={log.log_id}>
+                  <td className={styles.tableCellText}>
+                    {new Date(log.timestamp).toLocaleTimeString('en-US', {
+                      hour: '2-digit', minute: '2-digit', hour12: true 
+                    })}
+                  </td>
+                  <td className={styles.tableCellText}>{log.user_name}</td>
+                  <td className={styles.tableCellText}>{log.student_code}</td>
+                  <td className={styles.tableCellStatus}>
+                    <span className={log.action === 'enter' ? styles.statusPresent : styles.statusLate}>
+                      {log.action}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
