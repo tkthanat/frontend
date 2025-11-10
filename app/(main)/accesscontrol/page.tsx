@@ -1,14 +1,14 @@
 'use client';
 
+// ✨ import FormEvent มาแล้ว
 import React, { useEffect, useRef, useState, useCallback, FormEvent } from 'react';
 import { Settings, Download, X, VideoOff, Plus, Loader2, Save } from 'lucide-react';
 import styles from './accesscontrol.module.css';
-// import AddSubjectModal from './AddSubjectModal'; // (ย้าย AddSubjectModal มารวมในไฟล์นี้เลยเพื่อง่ายต่อการจัดการ)
 
 const BACKEND_URL = 'http://localhost:8000';
 const WS_BACKEND_URL = 'ws://localhost:8000';
 
-// --- (SettingsModal Component - เหมือนเดิม) ---
+// --- (SettingsModal Component) ---
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -60,7 +60,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSelect
 };
 
 // --- (AddSubjectModal Component) ---
-// ✨ (ย้าย AddSubjectModal มารวมในไฟล์นี้ และใช้ CSS class จาก styles)
 interface AddSubjectModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -280,8 +279,16 @@ const CameraBox: React.FC<CameraBoxProps> = ({ camId, streamKey, onSettingsClick
 };
 
 // --- (Interfaces) ---
-interface LogEntry { log_id: number; user_id: number; user_name: string; student_code: string; action: "enter" | "exit"; timestamp: string; confidence: number | null; }
-// ✨ เพิ่ม Interface สำหรับ Subject
+interface LogEntry { 
+  log_id: number; 
+  user_id: number; 
+  user_name: string; 
+  student_code: string; 
+  action: "enter" | "exit"; 
+  timestamp: string; 
+  confidence: number | null; 
+  subject_id: number | null; // ตรวจสอบว่ามี field นี้
+}
 interface Subject {
   subject_id: number;
   subject_name: string;
@@ -298,7 +305,6 @@ const AccessControlPage = () => {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // const [className, setClassName] = useState('SP403-61'); // 👈 ลบ state นี้
   const [lateTime, setLateTime] = useState('09:30');
   
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -306,13 +312,12 @@ const AccessControlPage = () => {
   
   const [isAddSubjectModalOpen, setIsAddSubjectModalOpen] = useState(false);
 
-  // ✨ เพิ่ม State สำหรับ Subjects
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(''); // เก็บ ID ของวิชาที่เลือก
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(''); // ค่าเริ่มต้นคือ "" (All Subjects)
 
   const formatDateForAPI = (date: Date): string => { return date.toISOString().split('T')[0]; };
 
-  // ✨ ฟังก์ชันสำหรับดึงรายชื่อวิชา
+  // ✨ [แก้ไข] ฟังก์ชันดึงรายชื่อวิชา
   const fetchSubjects = useCallback(async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/subjects`);
@@ -320,24 +325,23 @@ const AccessControlPage = () => {
       const data: Subject[] = await response.json();
       setSubjects(data);
       
-      // ถ้ายังไม่ได้เลือกวิชา (เช่น โหลดหน้าครั้งแรก) และมีข้อมูลวิชา ให้เลือกวิชาแรก
-      if (data.length > 0 && selectedSubjectId === '') {
-          setSelectedSubjectId(data[0].subject_id.toString());
-      }
+      // ❗️ [แก้ไข] ลบส่วนที่บังคับเลือกวิชาแรกออก
+      // if (data.length > 0 && selectedSubjectId === '') {
+      //     setSelectedSubjectId(data[0].subject_id.toString());
+      // }
     } catch (err) {
       console.error("Failed to fetch subjects:", err);
     }
-  }, [selectedSubjectId]); // ให้ re-check เมื่อ selectedSubjectId เปลี่ยน (แต่ส่วนใหญ่จะใช้ตอนโหลด)
+  }, []); // 👈 [แก้ไข] ลบ dependency ออก (ฟังก์ชันนี้คงที่)
 
   // ✨ อัปเดต fetchInitialLogs ให้กรองตาม subject_id ที่เลือก
   const fetchInitialLogs = useCallback(async () => {
     const dateString = formatDateForAPI(selectedDate);
     
-    // สร้าง URL
     let url = `${BACKEND_URL}/attendance/logs?start_date=${dateString}&end_date=${dateString}`;
     
     // ถ้ามีวิชาถูกเลือก (ไม่ใช่ค่าว่าง) ให้เพิ่ม subject_id เข้าไปใน query
-    if (selectedSubjectId) {
+    if (selectedSubjectId) { // 👈 ถ้า selectedSubjectId เป็น "" บรรทัดนี้จะเป็น false
       url += `&subject_id=${selectedSubjectId}`;
     }
 
@@ -347,31 +351,32 @@ const AccessControlPage = () => {
       setLogs(await response.json());
     } catch (err) { 
       console.error("Failed to fetch initial logs:", err); 
-      setLogs([]); // เคลียร์ logs ถ้า fetch ไม่สำเร็จ
+      setLogs([]); 
     }
-  }, [selectedDate, selectedSubjectId]); // 👈 เพิ่ม selectedSubjectId เป็น dependency
+  }, [selectedDate, selectedSubjectId]); 
 
+  // ✨ อัปเดต pollNewLogs ให้กรองตาม subject_id ที่เลือก
   const pollNewLogs = useCallback(async () => {
     if (!isViewingToday) return; 
     try {
-      // (Poll อาจจะไม่จำเป็นต้องกรอง subject_id เพราะมันดึงแค่ของใหม่ไม่กี่วินาที)
       const response = await fetch(`${BACKEND_URL}/attendance/poll`);
       if (!response.ok) throw new Error("Failed to poll logs");
       const newLogs: LogEntry[] = await response.json();
       
       if (newLogs.length > 0) { 
-        // กรอง newLogs ให้ตรงกับ subject ที่เลือกก่อนเพิ่มเข้าไป
         const filteredNewLogs = newLogs.filter(log => 
-          !selectedSubjectId || (log as any).subject_id?.toString() === selectedSubjectId
+          // ถ้าไม่ได้เลือก Subject (id="") = แสดงทั้งหมด
+          // หรือ ถ้าเลือก Subject ไว้ = แสดงเฉพาะ Log ที่ subject_id ตรงกัน
+          !selectedSubjectId || log.subject_id?.toString() === selectedSubjectId
         );
         if (filteredNewLogs.length > 0) {
           setLogs(prevLogs => [...filteredNewLogs, ...prevLogs]); 
         }
       }
     } catch (err) { console.error("Failed to poll new logs:", err); }
-  }, [isViewingToday, selectedSubjectId]); // 👈 เพิ่ม selectedSubjectId เป็น dependency
+  }, [isViewingToday, selectedSubjectId]);
 
-  // Effect สำหรับดึง Log (จะรันใหม่เมื่อ fetchInitialLogs หรือ pollNewLogs เปลี่ยน)
+  // Effect สำหรับดึง Log
   useEffect(() => {
     fetchInitialLogs(); 
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
@@ -393,10 +398,10 @@ const AccessControlPage = () => {
       fetchCurrentConfig();
   }, []);
   
-  // Effect สำหรับดึงรายชื่อวิชา (รันครั้งเดียว)
+  // ✨ [แก้ไข] Effect สำหรับดึงรายชื่อวิชา
   useEffect(() => {
     fetchSubjects();
-  }, []); // 👈 ดึงวิชาแค่ครั้งเดียวตอนโหลดหน้า
+  }, [fetchSubjects]); // 👈 เรียกเมื่อ fetchSubjects (useCallback) พร้อมใช้งาน
 
   // Effect สำหรับนาฬิกา (รันครั้งเดียว)
   useEffect(() => {
@@ -456,13 +461,12 @@ const AccessControlPage = () => {
           <label htmlFor="subjectSelect" style={{ whiteSpace: 'nowrap' }}>Class&nbsp;:</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
             
-            {/* ✨ เปลี่ยน Input เป็น Select */}
             <select
               id="subjectSelect"
-              className={styles.controlSelect} // 👈 ใช้ Class ใหม่ (ต้องเพิ่มใน CSS)
+              className={styles.controlSelect} 
               value={selectedSubjectId}
               onChange={(e) => setSelectedSubjectId(e.target.value)}
-              style={{ flex: 1, minWidth: '150px' }} // 👈 กำหนด flex และ min-width
+              style={{ flex: 1, minWidth: '150px' }} 
             >
               <option value="">-- All Subjects --</option>
               {subjects.map((subj) => (
@@ -475,7 +479,7 @@ const AccessControlPage = () => {
             <button 
                 onClick={() => setIsAddSubjectModalOpen(true)}
                 title="Create new subject"
-                className={styles.iconButton} // 👈 ใช้ Class ใหม่ (ต้องเพิ่มใน CSS)
+                className={styles.iconButton}
             >
                 <Plus size={18} />
             </button>
@@ -484,7 +488,7 @@ const AccessControlPage = () => {
         
         <div className={styles.controlGroup}>
           <label htmlFor="lateTime" style={{ whiteSpace: 'nowrap' }}>After :</label>
-          <input type-="time" id="lateTime" className={styles.controlInput} value={lateTime} onChange={(e) => setLateTime(e.target.value)} style={{ width: '130px' }}/>
+          <input type="time" id="lateTime" className={styles.controlInput} value={lateTime} onChange={(e) => setLateTime(e.target.value)} style={{ width: '130px' }}/>
           <span className={styles.lateTag}>Late</span>
         </div>
         
@@ -506,7 +510,7 @@ const AccessControlPage = () => {
           <button className={styles.exportButton}><Download size={16} /><span>Export data</span></button>
         </div>
         
-        <div className={styles.tableContainer}> {/* 👈 เพิ่ม Container นี้ */}
+        <div className={styles.tableContainer}>
           <table className={styles.attendanceTable}>
             <thead><tr><th>Time</th><th>Name</th><th>ID</th><th>Status</th></tr></thead>
             <tbody>
@@ -524,7 +528,7 @@ const AccessControlPage = () => {
               )}
             </tbody>
           </table>
-        </div> {/* 👈 ปิด Container */}
+        </div>
       </div>
     </div>
   );
