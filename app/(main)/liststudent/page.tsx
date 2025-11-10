@@ -392,7 +392,7 @@ const ListStudentPage = () => {
       </header>
 
       <main className={styles.studentGrid}>
-        {isLoading ? <p>Loading...</p> : students.length === 0 ? <p>No students found.</p> : 
+        {isLoading ? <p>Loading....</p> : students.length === 0 ? <p>No students found.</p> : 
           students.map(s => <StudentCard key={s.user_id} student={s} onDelete={handleDelete} onEdit={setEditingStudent} />)
         }
       </main>
