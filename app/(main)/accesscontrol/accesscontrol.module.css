@@ -2,6 +2,10 @@
 .pageContainer {
     padding: 2rem;
     background-color: #f8fafc;
+    /* ✨ เพิ่ม display: flex เพื่อให้ logCard ยืดได้ */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 /* --- Header Section --- */
@@ -11,7 +15,6 @@
     align-items: center;
     margin-bottom: 1.5rem;
 }
-
 .headerTitle {
     font-size: 1.875rem;
     font-weight: 700;
@@ -25,7 +28,6 @@
     gap: 1.5rem;
     margin-bottom: 1.5rem;
 }
-
 .cameraBox {
     position: relative;
     background-color: #f1f5f9;
@@ -34,14 +36,12 @@
     aspect-ratio: 16 / 10;
     overflow: hidden;
 }
-
 .videoFeed {
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 0.75rem;
 }
-
 .errorOverlay {
     display: flex;
     flex-direction: column;
@@ -54,20 +54,16 @@
     border-radius: 0.75rem;
     padding: 1rem;
 }
-
 .errorOverlay p {
     margin-top: 1rem;
     font-weight: 500;
 }
-
-/* Overlay ของ UI (ปุ่ม REC, Settings) */
 .cameraOverlay {
     position: absolute;
     inset: 0;
     padding: 0.75rem;
     color: #94a3b8;
 }
-
 .recIndicator {
     position: absolute;
     top: 0.75rem;
@@ -84,7 +80,6 @@
     background-color: #ef4444;
     border-radius: 50%;
 }
-
 .cameraSettingsButton {
     position: absolute;
     bottom: 0.75rem;
@@ -101,14 +96,10 @@
     cursor: pointer;
     transition: all 0.2s;
 }
-
 .cameraSettingsButton:hover {
     background: white;
     transform: scale(1.1) rotate(45deg);
 }
-
-
-/* --- AI Overlay --- */
 .aiOverlayContainer {
     position: absolute;
     inset: 0;
@@ -116,7 +107,6 @@
     height: 100%;
     pointer-events: none;
 }
-
 .aiBox {
     position: absolute;
     border-width: 3px;
@@ -125,16 +115,8 @@
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
     transition: all 0.1s ease-out;
 }
-
-.unknownBox {
-    border-color: #ef4444; /* red-500 */
-}
-
-.matchedBox {
-    border-color: #22c55e; /* green-500 */
-}
-
-
+.unknownBox { border-color: #ef4444; }
+.matchedBox { border-color: #22c55e; }
 .aiNameTag {
     position: absolute;
     bottom: 100%;
@@ -145,16 +127,8 @@
     font-weight: 600;
     border-radius: 0.25rem 0.25rem 0 0;
 }
-
-.unknownTag {
-    background-color: #ef4444; /* red-500 */
-}
-
-.matchedTag {
-    background-color: #22c55e; /* green-500 */
-}
-/* --- จบส่วน AI Overlay --- */
-
+.unknownTag { background-color: #ef4444; }
+.matchedTag { background-color: #22c55e; }
 
 /* --- Control Panel --- */
 .controlPanel {
@@ -166,7 +140,6 @@
     color: #334155;
     flex-wrap: wrap; 
 }
-
 .lateTag {
     border: 1px solid #f87171;
     color: #ef4444;
@@ -176,7 +149,6 @@
     font-size: 0.875rem;
     font-weight: 500;
 }
-
 .controlButton {
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
@@ -185,29 +157,11 @@
     cursor: pointer;
     transition: all 0.2s;
 }
-.controlButton:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.startButton {
-    border: 1px solid #22c55e;
-    color: #22c55e;
-    margin-left: auto;
-}
-.startButton:hover:not(:disabled) {
-    background-color: #22c55e;
-    color: #fff;
-}
-
-.stopButton {
-    border: 1px solid #ef4444;
-    color: #ef4444;
-}
-.stopButton:hover:not(:disabled) {
-    background-color: #ef4444;
-    color: #fff;
-}
+.controlButton:disabled { opacity: 0.5; cursor: not-allowed; }
+.startButton { border: 1px solid #22c55e; color: #22c55e; margin-left: auto; }
+.startButton:hover:not(:disabled) { background-color: #22c55e; color: #fff; }
+.stopButton { border: 1px solid #ef4444; color: #ef4444; }
+.stopButton:hover:not(:disabled) { background-color: #ef4444; color: #fff; }
 
 /* --- Attendance Log Card --- */
 .logCard {
@@ -216,8 +170,13 @@
     border-radius: 0.75rem;
     padding: 1.5rem;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    
+    /* ✨ เพิ่ม flex-1 และ display: flex */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px; /* ความสูงขั้นต่ำ */
 }
-
 .logHeader {
     display: flex;
     justify-content: space-between;
@@ -226,13 +185,7 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid #f1f5f9;
 }
-
-.logTitle {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-}
-
+.logTitle { font-size: 1.25rem; font-weight: 600; color: #1e293b; }
 .exportButton {
     display: flex;
     align-items: center;
@@ -246,39 +199,25 @@
     cursor: pointer;
     transition: background-color 0.2s;
 }
-.exportButton:hover {
-    background-color: #2563eb;
-}
+.exportButton:hover { background-color: #2563eb; }
 
 /* --- Attendance Table --- */
-.attendanceTable {
-    width: 100%;
-    border-collapse: collapse;
+/* ✨ เพิ่ม .tableContainer */
+.tableContainer {
+    flex: 1;
+    overflow-y: auto;
+    /* (ไม่จำเป็นต้องมี margin-top ถ้า logHeader มี margin-bottom อยู่แล้ว) */
 }
-.attendanceTable th, .attendanceTable td {
-    padding: 0.75rem 0.5rem;
-    text-align: left;
-    color: #334155;
-}
+.attendanceTable { width: 100%; border-collapse: collapse; }
+.attendanceTable th, .attendanceTable td { padding: 0.75rem 0.5rem; text-align: left; color: #334155; }
 .tableCellText { color: #334155; }
 .tableCellStatus { font-weight: 600; }
-.attendanceTable th {
-    font-weight: 500;
-    font-size: 0.875rem;
-    color: #64748b;
-}
+.attendanceTable th { font-weight: 500; font-size: 0.875rem; color: #64748b; }
 .attendanceTable tbody tr { border-bottom: 1px solid #f1f5f9; }
 .attendanceTable tbody tr:last-child { border-bottom: none; }
 .statusPresent { color: #16a34a; font-weight: 500; }
 .statusLate { color: #dc2626; font-weight: 500; }
-
-/* ✨ [ใหม่] สไตล์สำหรับแถว "No logs" */
-.noLogs {
-    text-align: center;
-    padding: 1rem;
-    color: #64748b; /* slate-500 */
-}
-
+.noLogs { text-align: center; padding: 1rem; color: #64748b; }
 
 /* --- Modal Styles --- */
 .modalBackdrop {
@@ -300,29 +239,10 @@
     position: relative;
     animation: fadeIn 0.3s ease-out;
 }
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-.modalContent h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
-}
-.modalContent p {
-    color: #64748b;
-    margin-bottom: 1.5rem;
-}
-.closeButton {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+.modalContent h2 { font-size: 1.5rem; font-weight: 600; color: #1e293b; margin-bottom: 1.5rem; }
+.modalContent p { color: #64748b; margin-bottom: 1.5rem; }
+.closeButton { position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; color: #94a3b8; cursor: pointer; }
 .deviceSelect {
     width: 100%;
     padding: 0.75rem;
@@ -343,9 +263,7 @@
     cursor: pointer;
     transition: background-color 0.2s;
 }
-.confirmButton:hover {
-    background-color: #2563eb;
-}
+.confirmButton:hover { background-color: #2563eb; }
 
 /* --- สไตล์สำหรับนาฬิกา Real-time --- */
 .realTimeClock {
@@ -353,7 +271,7 @@
     font-weight: 600;
     color: #334155;
     background-color: #f1f5f9;
-    padding: 0.25rem 0.75rem;
+    padding: 0.5rem 0.75rem; /* ปรับ padding ให้สูงขึ้นเล็กน้อย */
     border-radius: 0.375rem;
     border: 1px solid #e2e8f0;
     margin-right: 0; 
@@ -369,12 +287,12 @@
     color: #334155;
 }
 .controlInput {
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem 0.75rem; /* ปรับ padding ให้สูงขึ้น */
     border: 1px solid #cbd5e1;
     border-radius: 0.375rem;
     font-weight: 600;
     color: #1e293b;
-    font-size: 1.125rem;
+    font-size: 1rem; /* ปรับ font size ให้สม่ำเสมอ */
     line-height: 1.5rem;
     width: 140px; 
 }
@@ -384,11 +302,12 @@
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 .controlInput[type="time"] {
-    width: 110px;
+    width: 130px; /* ขยายความกว้างตามที่ขอก่อนหน้า */
     font-size: 1rem;
+    font-weight: 500; /* อาจจะลด font-weight ลงเล็กน้อย */
 }
 
-/* ✨ --- [ใหม่] สไตล์สำหรับ Date Picker --- ✨ */
+/* ✨ [ใหม่] สไตล์สำหรับ Date Picker --- */
 .datePickerContainer {
     display: flex;
     align-items: center;
@@ -396,10 +315,7 @@
     margin-left: auto;
     margin-right: 1rem; 
 }
-.datePickerContainer label {
-    font-weight: 500;
-    color: #334155;
-}
+.datePickerContainer label { font-weight: 500; color: #334155; }
 .dateInput {
     padding: 0.5rem;
     border: 1px solid #cbd5e1;
@@ -407,4 +323,105 @@
     font-size: 0.875rem;
     font-weight: 500;
     color: #334155;
+}
+
+/* ✨ [ใหม่] สไตล์สำหรับ Dropdown (Select) */
+.controlSelect {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    background-color: white;
+    cursor: pointer;
+}
+.controlSelect:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* ✨ [ใหม่] สไตล์สำหรับปุ่ม Icon (ปุ่มบวก) */
+.iconButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background-color: #f9fafb;
+    cursor: pointer;
+    color: #374151;
+    transition: all 0.2s;
+    height: 40px; 
+    width: 40px;
+}
+.iconButton:hover {
+    background-color: #e5e7eb;
+}
+
+/* ✨ [ใหม่] สไตล์สำหรับ Modal Form (เพื่อให้เหมือน AddStudent) */
+.modalForm {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.formGroup label {
+    font-weight: 500;
+    color: #334155;
+}
+.formGroup input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+.formGroup input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+.submitButton {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.submitButton:hover:not(:disabled) {
+    background-color: #2563eb;
+}
+.submitButton:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+}
+.errorText {
+    color: #ef4444;
+    font-size: 0.875rem;
+}
+.spinner {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
