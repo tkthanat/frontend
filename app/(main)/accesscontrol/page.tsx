@@ -1,9 +1,10 @@
 'use client';
 
-// ✨ (Imports)
+// ✨ 1. เพิ่ม Trash2 และ Import Modal ใหม่
 import React, { useEffect, useRef, useState, useCallback, FormEvent } from 'react';
-import { Settings, Download, X, VideoOff, Plus, Loader2, Save } from 'lucide-react';
+import { Settings, Download, X, VideoOff, Plus, Loader2, Save, Trash2 } from 'lucide-react';
 import styles from './accesscontrol.module.css';
+import { DeleteSubjectModal } from './DeleteSubjectModal'; // (Import ไฟล์ใหม่)
 
 const BACKEND_URL = 'http://localhost:8000';
 const WS_BACKEND_URL = 'ws://localhost:8000';
@@ -312,8 +313,14 @@ const AccessControlPage = () => {
   
   const [isAddSubjectModalOpen, setIsAddSubjectModalOpen] = useState(false);
 
+  // ✨ 2. เพิ่ม State สำหรับ Modal ลบ
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(''); // ค่าเริ่มต้นคือ "" (All Subjects)
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
+  
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
 
   const formatDateForAPI = (date: Date): string => { return date.toISOString().split('T')[0]; };
 
@@ -423,56 +430,57 @@ const AccessControlPage = () => {
      fetchSubjects(); // สั่งให้ดึงรายชื่อวิชาใหม่
   };
 
-  const handleExport = async () => {
-    console.log("Exporting data...");
+  // ✨ 3. เพิ่มฟังก์ชัน Callback เมื่อลบสำเร็จ
+  const handleSubjectDeleted = () => {
+     fetchSubjects(); // (แค่สั่งให้ดึงรายชื่อวิชาใหม่)
+     // (ถ้าวิชาที่เลือกลบ เป็นวิชาที่เลือกค้างไว้ใน Dropdown ให้ Clear)
+     if (selectedSubjectId && !subjects.find(s => s.subject_id.toString() === selectedSubjectId)) {
+        setSelectedSubjectId('');
+     }
+  };
+
+  const handleExport = async (format: 'csv' | 'xlsx') => {
+    console.log(`Exporting data as ${format}...`);
+    setShowExportMenu(false); // (สั่งปิดเมนู)
+    
     const dateString = formatDateForAPI(selectedDate);
     const subjectId = selectedSubjectId;
-    let url = `${BACKEND_URL}/attendance/export?start_date=${dateString}&end_date=${dateString}`;
+    
+    const params = new URLSearchParams();
+    params.append("start_date", dateString);
+    params.append("end_date", dateString);
     if (subjectId) {
-      url += `&subject_id=${subjectId}`;
+      params.append("subject_id", subjectId);
     }
+    params.append("format", format); // (ใช้ format ที่ส่งเข้ามา)
+    
+    const url = `${BACKEND_URL}/attendance/export?${params.toString()}`;
+
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch export data from backend');
-      }
-      const data: any[] = await response.json();
-      if (data.length === 0) {
-        alert("No data to export for the selected filters.");
-        return;
-      }
-      let txtContent = "";
-      const headers = Object.keys(data[0]);
-      txtContent += headers.join('\t') + '\r\n';
-      data.forEach(row => {
-        const values = headers.map(header => {
-          let val = row[header];
-          if (val === null || val === undefined) val = "N/A";
-          return `"${String(val).replace(/"/g, '""')}"`;
-        });
-        txtContent += values.join('\t') + '\r\n';
-      });
-      const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
       const link = document.createElement("a");
-      const blobUrl = URL.createObjectURL(blob);
-      link.setAttribute("href", blobUrl);
-      link.setAttribute("download", `attendance_export_${dateString}.txt`);
+      link.href = url;
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
     } catch (err: any) {
       console.error("Export failed:", err);
       alert(`Export failed: ${err.message}`);
     }
   };
 
+
   return (
     <div className={styles.pageContainer}>
       <SettingsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSelectDevice={handleSelectDevice} />
-      
       <AddSubjectModal isOpen={isAddSubjectModalOpen} onClose={() => setIsAddSubjectModalOpen(false)} onSubjectAdded={handleSubjectAdded} />
+      
+      {/* ✨ 4. Render Modal ใหม่ */}
+      <DeleteSubjectModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onSubjectDeleted={handleSubjectDeleted}
+      />
 
       <header className={styles.header}>
         <h1 className={styles.headerTitle}>Camera Preview</h1>
@@ -509,6 +517,16 @@ const AccessControlPage = () => {
             >
                 <Plus size={18} />
             </button>
+
+            {/* ✨ 5. เพิ่มปุ่มถังขยะ */}
+            <button 
+                onClick={() => setIsDeleteModalOpen(true)}
+                title="Delete a subject"
+                className={`${styles.iconButton} ${styles.deleteButton}`}
+            >
+                <Trash2 size={18} />
+            </button>
+            
           </div>
         </div>
         
@@ -533,10 +551,26 @@ const AccessControlPage = () => {
             <label htmlFor="logDate">Select Date:</label>
             <input type="date" id="logDate" className={styles.dateInput} value={formatDateForAPI(selectedDate)} onChange={(e) => setSelectedDate(new Date(e.target.value))} />
           </div>
-          <button className={styles.exportButton} onClick={handleExport}>
-            <Download size={16} />
-            <span>Export data</span>
-          </button>
+
+          <div className={styles.exportControls}>
+            <div style={{ position: 'relative' }}>
+              <button 
+                className={styles.exportButton} 
+                onClick={() => setShowExportMenu(!showExportMenu)}
+              >
+                <Download size={16} />
+                <span>Export data</span>
+              </button>
+              
+              {showExportMenu && (
+                <div className={styles.exportMenu}>
+                  <button onClick={() => handleExport('csv')}>Export as .csv</button>
+                  <button onClick={() => handleExport('xlsx')}>Export as .xlsx</button>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
         
         <div className={styles.tableContainer}>
