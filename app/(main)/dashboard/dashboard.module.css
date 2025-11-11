@@ -2,7 +2,8 @@
 
 .pageContainer {
     padding: 2rem;
-    background-color: #fff; /* (เปลี่ยนเป็นสีขาวตามรูป) */
+    background-color: #fff;
+    position: relative; 
 }
 
 .header {
@@ -26,7 +27,7 @@
     color: #3b82f6; /* blue-500 */
     border: 1px solid #dbeafe; /* blue-200 */
     padding: 0.6rem 1rem;
-    border-radius: 0.5rem; /* (แก้เป็นสี่เหลี่ยม) */
+    border-radius: 0.5rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -36,11 +37,16 @@
     background-color: #f9fafb; /* gray-50 */
     border-color: #bfdbfe; /* blue-300 */
 }
+.exportButton:disabled {
+    background-color: #f1f5f9;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
 
 /* --- Stat Cards Grid --- */
 .statsGrid {
     display: grid;
-    /* (แก้เป็น 4 Cards ตามรูป) */
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
     margin-bottom: 2rem;
@@ -54,7 +60,6 @@
     padding: 1.5rem;
     border-radius: 0.75rem;
     border: 1px solid #e2e8f0; /* slate-200 */
-    /* (เงาแบบในรูป) */
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.03), 0 2px 4px -2px rgb(0 0 0 / 0.03);
 }
 
@@ -69,7 +74,6 @@
     background-color: #f3f4f6; /* gray-100 */
     color: #4b5563; /* gray-600 */
 }
-/* (สีไอคอนตามรูป) */
 .statCard:nth-child(1) .statIcon { background-color: #eef2ff; color: #4f46e5; } /* Indigo */
 .statCard:nth-child(2) .statIcon { background-color: #f0fdf4; color: #22c55e; } /* Green */
 .statCard:nth-child(3) .statIcon { background-color: #fefce8; color: #eab308; } /* Yellow */
@@ -96,16 +100,14 @@
 /* --- Charts Grid --- */
 .chartsGrid {
     display: grid;
-    grid-template-columns: 2fr 1fr; /* (แบ่ง 2/3, 1/3) */
+    grid-template-columns: 2fr 1fr;
     gap: 1.5rem;
     margin-bottom: 1.5rem;
 }
-/* (ให้ Chart 3, 4 ขยายเต็มแถว) */
 .chartsGrid > *:nth-child(3),
 .chartsGrid > *:nth-child(4) {
     grid-column: span 1 / span 1;
 }
-/* (ยกเว้นถ้าเรามี 4 chart ก็ใช้ grid-column: span 1) */
 .chartsGrid {
     grid-template-columns: repeat(2, 1fr);
 }
@@ -122,10 +124,79 @@
     font-size: 1.125rem; /* text-lg */
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 1.5rem; /* (เพิ่มระยะห่าง) */
+    margin-bottom: 1.5rem;
 }
 
 .chartContent {
     height: 350px;
     position: relative;
+}
+
+/* --- (โค้ดสำหรับ Dropdown & Loading) --- */
+
+.exportControls {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.exportMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  width: max-content;
+  min-width: 180px;
+  padding: 4px;
+  margin-top: 8px;
+}
+
+.exportMenu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  color: #1f2937;
+}
+
+.exportMenu button:hover {
+  background-color: #f4f4f5;
+}
+
+.menuSeparator {
+  border-top: 1px solid #e2e8f0;
+  margin: 4px 0;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+.exportLoadingOverlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 1.125rem;
+  gap: 1rem;
 }
