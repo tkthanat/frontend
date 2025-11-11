@@ -1,10 +1,9 @@
 'use client';
 
-// ✨ 1. เพิ่ม Trash2 และ Import Modal ใหม่
 import React, { useEffect, useRef, useState, useCallback, FormEvent } from 'react';
 import { Settings, Download, X, VideoOff, Plus, Loader2, Save, Trash2 } from 'lucide-react';
 import styles from './accesscontrol.module.css';
-import { DeleteSubjectModal } from './DeleteSubjectModal'; // (Import ไฟล์ใหม่)
+import { DeleteSubjectModal } from './DeleteSubjectModal';
 
 const BACKEND_URL = 'http://localhost:8000';
 const WS_BACKEND_URL = 'ws://localhost:8000';
@@ -312,8 +311,6 @@ const AccessControlPage = () => {
   const isViewingToday = selectedDate.toDateString() === new Date().toDateString();
   
   const [isAddSubjectModalOpen, setIsAddSubjectModalOpen] = useState(false);
-
-  // ✨ 2. เพิ่ม State สำหรับ Modal ลบ
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -359,6 +356,7 @@ const AccessControlPage = () => {
       const newLogs: LogEntry[] = await response.json();
       
       if (newLogs.length > 0) { 
+        // (กรอง Log ใหม่ที่เข้ามาให้ตรงกับ Subject ที่เลือก)
         const filteredNewLogs = newLogs.filter(log => 
           !selectedSubjectId || log.subject_id?.toString() === selectedSubjectId
         );
@@ -367,7 +365,7 @@ const AccessControlPage = () => {
         }
       }
     } catch (err) { console.error("Failed to poll new logs:", err); }
-  }, [isViewingToday, selectedSubjectId]);
+  }, [isViewingToday, selectedSubjectId]); // (ขึ้นอยู่กับ selectedSubjectId)
 
   useEffect(() => {
     fetchInitialLogs(); 
@@ -398,6 +396,26 @@ const AccessControlPage = () => {
     return () => { clearInterval(timer); };
   }, []);
 
+  const handleSubjectChange = async (newSubjectId: string) => {
+    setSelectedSubjectId(newSubjectId);
+
+    const subjectIdAsInt = newSubjectId ? parseInt(newSubjectId, 10) : null;
+
+    console.log(`Setting active subject in backend: ${subjectIdAsInt}`);
+    try {
+      const res = await fetch(`${BACKEND_URL}/attendance/set_active_subject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject_id: subjectIdAsInt }),
+      });
+      if (!res.ok) throw new Error("Failed to set active subject");
+      const data = await res.json();
+      console.log("Backend roster updated:", data);
+    } catch (err) {
+      console.error("Failed to set active subject:", err);
+    }
+  };
+
   const handleOpenModal = (target: 'entrance' | 'exit') => {
     setCurrentTargetCamera(target);
     setIsModalOpen(true);
@@ -427,21 +445,19 @@ const AccessControlPage = () => {
   
   const handleSubjectAdded = () => {
      alert("Subject created successfully!");
-     fetchSubjects(); // สั่งให้ดึงรายชื่อวิชาใหม่
+     fetchSubjects();
   };
-
-  // ✨ 3. เพิ่มฟังก์ชัน Callback เมื่อลบสำเร็จ
+  
   const handleSubjectDeleted = () => {
-     fetchSubjects(); // (แค่สั่งให้ดึงรายชื่อวิชาใหม่)
-     // (ถ้าวิชาที่เลือกลบ เป็นวิชาที่เลือกค้างไว้ใน Dropdown ให้ Clear)
+     fetchSubjects();
      if (selectedSubjectId && !subjects.find(s => s.subject_id.toString() === selectedSubjectId)) {
-        setSelectedSubjectId('');
+        handleSubjectChange('');
      }
   };
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
     console.log(`Exporting data as ${format}...`);
-    setShowExportMenu(false); // (สั่งปิดเมนู)
+    setShowExportMenu(false);
     
     const dateString = formatDateForAPI(selectedDate);
     const subjectId = selectedSubjectId;
@@ -452,7 +468,7 @@ const AccessControlPage = () => {
     if (subjectId) {
       params.append("subject_id", subjectId);
     }
-    params.append("format", format); // (ใช้ format ที่ส่งเข้ามา)
+    params.append("format", format);
     
     const url = `${BACKEND_URL}/attendance/export?${params.toString()}`;
 
@@ -475,7 +491,6 @@ const AccessControlPage = () => {
       <SettingsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSelectDevice={handleSelectDevice} />
       <AddSubjectModal isOpen={isAddSubjectModalOpen} onClose={() => setIsAddSubjectModalOpen(false)} onSubjectAdded={handleSubjectAdded} />
       
-      {/* ✨ 4. Render Modal ใหม่ */}
       <DeleteSubjectModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -499,7 +514,7 @@ const AccessControlPage = () => {
               id="subjectSelect"
               className={styles.controlSelect} 
               value={selectedSubjectId}
-              onChange={(e) => setSelectedSubjectId(e.target.value)}
+              onChange={(e) => handleSubjectChange(e.target.value)}
               style={{ flex: 1, minWidth: '150px' }} 
             >
               <option value="">-- All Subjects --</option>
@@ -518,7 +533,6 @@ const AccessControlPage = () => {
                 <Plus size={18} />
             </button>
 
-            {/* ✨ 5. เพิ่มปุ่มถังขยะ */}
             <button 
                 onClick={() => setIsDeleteModalOpen(true)}
                 title="Delete a subject"
