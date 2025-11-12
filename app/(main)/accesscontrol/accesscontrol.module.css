@@ -2,7 +2,6 @@
 .pageContainer {
     padding: 2rem;
     background-color: #f8fafc;
-    /* ✨ เพิ่ม display: flex เพื่อให้ logCard ยืดได้ */
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -170,12 +169,10 @@
     border-radius: 0.75rem;
     padding: 1.5rem;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-    
-    /* ✨ เพิ่ม flex-1 และ display: flex */
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 400px; /* ความสูงขั้นต่ำ */
+    min-height: 400px;
 }
 .logHeader {
     display: flex;
@@ -186,6 +183,11 @@
     border-bottom: 1px solid #f1f5f9;
 }
 .logTitle { font-size: 1.25rem; font-weight: 600; color: #1e293b; }
+
+/* --- Export Menu Styles --- */
+.exportControls {
+    position: relative;
+}
 .exportButton {
     display: flex;
     align-items: center;
@@ -200,16 +202,40 @@
     transition: background-color 0.2s;
 }
 .exportButton:hover { background-color: #2563eb; }
+.exportMenu {
+    position: absolute;
+    top: 110%; 
+    right: 0;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 10;
+    width: 160px;
+    overflow: hidden;
+}
+.exportMenu button {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 0.875rem;
+    color: #334155;
+    cursor: pointer;
+}
+.exportMenu button:hover {
+    background-color: #f8fafc;
+}
 
 /* --- Attendance Table --- */
-/* ✨ เพิ่ม .tableContainer */
 .tableContainer {
     flex: 1;
     overflow-y: auto;
-    /* (ไม่จำเป็นต้องมี margin-top ถ้า logHeader มี margin-bottom อยู่แล้ว) */
 }
 .attendanceTable { width: 100%; border-collapse: collapse; }
-.attendanceTable th, .attendanceTable td { padding: 0.75rem 0.5rem; text-align: left; color: #334155; }
+.attendanceTable th, .attendanceTable td { padding: 0.75rem 0.5rem; text-align: left; color: #334155; vertical-align: middle; }
 .tableCellText { color: #334155; }
 .tableCellStatus { font-weight: 600; }
 .attendanceTable th { font-weight: 500; font-size: 0.875rem; color: #64748b; }
@@ -218,6 +244,28 @@
 .statusPresent { color: #16a34a; font-weight: 500; }
 .statusLate { color: #dc2626; font-weight: 500; }
 .noLogs { text-align: center; padding: 1rem; color: #64748b; }
+
+/* --- Snapshot Cell Styles --- */
+.tableCellSnapshot {
+    width: 120px;
+    text-align: center;
+    padding: 0.25rem 0.5rem;
+}
+.snapshotImage {
+    width: 100px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 0.375rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.snapshotImage:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
 
 /* --- Modal Styles --- */
 .modalBackdrop {
@@ -265,19 +313,40 @@
 }
 .confirmButton:hover { background-color: #2563eb; }
 
-/* --- สไตล์สำหรับนาฬิกา Real-time --- */
+/* --- Snapshot Modal Styles --- */
+.snapshotModalContent {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    width: 90%;
+    max-width: 800px;
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2);
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+}
+.snapshotModalImage {
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    display: block;
+}
+
+/* --- Real-time Clock --- */
 .realTimeClock {
     font-size: 1.125rem;
     font-weight: 600;
     color: #334155;
     background-color: #f1f5f9;
-    padding: 0.5rem 0.75rem; /* ปรับ padding ให้สูงขึ้นเล็กน้อย */
+    padding: 0.5rem 0.75rem; 
     border-radius: 0.375rem;
     border: 1px solid #e2e8f0;
     margin-right: 0; 
+    height: 40px;
+    display: flex;
+    align-items: center;
 }
 
-/* --- สไตล์สำหรับ Control Panel Inputs --- */
+/* --- Control Panel Inputs --- */
 .controlGroup {
     display: flex;
     align-items: center;
@@ -287,14 +356,15 @@
     color: #334155;
 }
 .controlInput {
-    padding: 0.5rem 0.75rem; /* ปรับ padding ให้สูงขึ้น */
+    padding: 0.5rem 0.75rem; 
     border: 1px solid #cbd5e1;
     border-radius: 0.375rem;
     font-weight: 600;
     color: #1e293b;
-    font-size: 1rem; /* ปรับ font size ให้สม่ำเสมอ */
+    font-size: 1rem; 
     line-height: 1.5rem;
     width: 140px; 
+    height: 40px; 
 }
 .controlInput:focus {
     outline: none;
@@ -302,18 +372,17 @@
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 .controlInput[type="time"] {
-    width: 130px; /* ขยายความกว้างตามที่ขอก่อนหน้า */
+    width: 130px; 
     font-size: 1rem;
-    font-weight: 500; /* อาจจะลด font-weight ลงเล็กน้อย */
+    font-weight: 500; 
 }
 
-/* ✨ [ใหม่] สไตล์สำหรับ Date Picker --- */
+/* --- Date Picker --- */
 .datePickerContainer {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     margin-left: auto;
-    margin-right: 1rem; 
 }
 .datePickerContainer label { font-weight: 500; color: #334155; }
 .dateInput {
@@ -325,7 +394,7 @@
     color: #334155;
 }
 
-/* ✨ [ใหม่] สไตล์สำหรับ Dropdown (Select) */
+/* --- Dropdown (Select) --- */
 .controlSelect {
     padding: 0.5rem 0.75rem;
     border: 1px solid #cbd5e1;
@@ -336,7 +405,7 @@
     line-height: 1.5rem;
     background-color: white;
     cursor: pointer;
-    margin-right: 8px;
+    height: 40px; 
 }
 .controlSelect:focus {
     outline: none;
@@ -344,7 +413,7 @@
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
-/* ✨ [ใหม่] สไตล์สำหรับปุ่ม Icon (ปุ่มบวก) */
+/* --- Icon Button (Plus/Trash) --- */
 .iconButton {
     display: flex;
     align-items: center;
@@ -360,10 +429,19 @@
     width: 40px;
 }
 .iconButton:hover {
-    background-color: #e5e7eb;
+    background-color: #e2e8f0;
+}
+.deleteButton {
+    background-color: #fee2e2;
+    color: #ef4444;
+    border: 1px solid #fca5a5;
+}
+.deleteButton:hover {
+    background-color: #fecaca;
+    color: #b91c1c;
 }
 
-/* ✨ [ใหม่] สไตล์สำหรับ Modal Form (เพื่อให้เหมือน AddStudent) */
+/* --- Modal Form (Add Subject/Student) --- */
 .modalForm {
     margin-top: 1.5rem;
     display: flex;
@@ -378,6 +456,7 @@
 .formGroup label {
     font-weight: 500;
     color: #334155;
+    font-size: 0.875rem; 
 }
 .formGroup input {
     width: 100%;
@@ -385,11 +464,13 @@
     border: 1px solid #cbd5e1;
     border-radius: 0.5rem;
     font-size: 1rem;
+    background-color: #f9fafb; 
 }
 .formGroup input:focus {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    background-color: white;
 }
 .submitButton {
     width: 100%;
@@ -418,6 +499,7 @@
 .errorText {
     color: #ef4444;
     font-size: 0.875rem;
+    text-align: center;
 }
 .spinner {
     animation: spin 1s linear infinite;
@@ -425,98 +507,4 @@
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
-}
-
-/* (แก้ให้ .exportControls เป็น positioning context) */
-.exportControls {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.exportMenu {
-  position: absolute;
-  top: 100%; /* (แสดงข้างล่างปุ่ม) */
-  right: 0;
-  background-color: white;
-  border: 1px solid #e2e8f0; /* (สีเทาอ่อน) */
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-  width: 160px; /* (กำหนดความกว้าง) */
-  padding: 4px;
-  margin-top: 8px; /* (เว้นระยะจากปุ่ม) */
-}
-
-.exportMenu button {
-  display: block;
-  width: 100%;
-  padding: 8px 12px;
-  text-align: left;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 4px;
-  color: #1f2937; /* (สีตัวอักษร) */
-}
-
-.exportMenu button:hover {
-  background-color: #f4f4f5; /* (สีพื้นหลังตอน hover) */
-}
-
-/* (สไตล์สำหรับปุ่มถังขยะสีแดงข้างปุ่มบวก) */
-.deleteButton {
-  background-color: #fee2e2; /* (สีแดงอ่อน) */
-  color: #dc2626; /* (สีแดงเข้ม) */
-}
-.deleteButton:hover {
-  background-color: #fecaca; /* (สีแดงอ่อนตอน Hover) */
-}
-
-/* (สไตล์สำหรับรายการใน Modal ลบ) */
-.deleteListContainer {
-  margin-top: 16px;
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-}
-
-.deleteItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
-}
-.deleteItem:last-child {
-  border-bottom: none;
-}
-
-.deleteItem span {
-  font-size: 16px;
-  color: #334155;
-  font-weight: 500;
-}
-
-.deleteIcon {
-  background: none;
-  border: none;
-  color: #ef4444; /* (สีแดง) */
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
-}
-.deleteIcon:hover {
-  background-color: #fee2e2; /* (พื้นหลังแดงอ่อน) */
-}
-.deleteIcon:disabled {
-  color: #9ca3af; /* (สีเทาตอนโหลด) */
-  cursor: not-allowed;
-  background-color: transparent;
 }
