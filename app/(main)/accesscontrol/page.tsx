@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback, FormEvent } from 'react';
 import { Settings, Download, X, VideoOff, Plus, Loader2, Save, Trash2 } from 'lucide-react';
 import styles from './accesscontrol.module.css';
-import { DeleteSubjectModal } from './DeleteSubjectModal';
+import { DeleteSubjectModal } from './DeleteSubjectModal'; // (Assume this file exists)
 
 const BACKEND_URL = 'http://localhost:8000';
 const WS_BACKEND_URL = 'ws://localhost:8000';
@@ -177,14 +177,34 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSu
   );
 };
 
+
+// --- (SnapshotModal Component) ---
+interface SnapshotModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  imageUrl: string | null;
+}
+
+const SnapshotModal: React.FC<SnapshotModalProps> = ({ isOpen, onClose, imageUrl }) => {
+  if (!isOpen || !imageUrl) return null;
+
+  return (
+    <div className={styles.modalBackdrop} onClick={onClose} style={{ zIndex: 1200 }}>
+      <div className={styles.snapshotModalContent} onClick={(e) => e.stopPropagation()}>
+        <button className={styles.closeButton} onClick={onClose} style={{ color: '#fff', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '50%' }}><X size={24} /></button>
+        <img src={imageUrl} alt="Full Snapshot" className={styles.snapshotModalImage} />
+      </div>
+    </div>
+  );
+};
+
+
 // --- (Custom Hook WebSocket) ---
 interface AIResult { name: string; box: [number, number, number, number]; similarity?: number | null; matched: boolean; display_name: string; }
 interface AIData { results: AIResult[]; ai_width: number; ai_height: number; }
-
 const useAIResults = (camId: string, streamKey: string) => {
   const [data, setData] = useState<AIData>({ results: [], ai_width: 640, ai_height: 480 });
   const wsRef = useRef<WebSocket | null>(null);
-
   useEffect(() => {
     if (!streamKey || !camId) {
         if (wsRef.current) {
@@ -194,15 +214,12 @@ const useAIResults = (camId: string, streamKey: string) => {
         setData({ results: [], ai_width: 640, ai_height: 480 });
         return; 
     }
-    
     const connect = () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         return;
       }
-      
       const ws = new WebSocket(`${WS_BACKEND_URL}/ws/ai_results/${camId}`);
       wsRef.current = ws;
-      
       ws.onopen = () => console.log(`[WS AI ${camId}] Connected (Source: ${streamKey}).`);
       ws.onmessage = (event) => {
         const data: AIData = JSON.parse(event.data);
@@ -215,9 +232,7 @@ const useAIResults = (camId: string, streamKey: string) => {
         setTimeout(() => { if(streamKey) connect(); }, 3000);
       };
     };
-    
     connect();
-
     return () => {
       if (wsRef.current) {
         wsRef.current.close(1000, "Component unmounting or streamKey changed");
@@ -225,7 +240,6 @@ const useAIResults = (camId: string, streamKey: string) => {
       }
     };
   }, [camId, streamKey]);
-
   return data;
 };
 
@@ -240,9 +254,7 @@ const CameraBox: React.FC<CameraBoxProps> = ({ camId, streamKey, onSettingsClick
   const { results: aiResults, ai_width, ai_height } = useAIResults(camId, streamKey); 
   const containerRef = useRef<HTMLDivElement>(null);
   const streamUrl = (streamKey) ? `${BACKEND_URL}/cameras/${camId}/mjpeg?key=${streamKey}` : null;
-
   useEffect(() => { setError(false); }, [streamUrl]);
-
   const calculateBoxStyle = (box: [number, number, number, number]): React.CSSProperties => {
     if (!box || !Array.isArray(box) || box.length < 4) { return { display: 'none' }; }
     if (!containerRef.current) return { display: 'none' };
@@ -253,7 +265,6 @@ const CameraBox: React.FC<CameraBoxProps> = ({ camId, streamKey, onSettingsClick
     const [x, y, w, h] = box;
     return { left: `${x * scaleX}px`, top: `${y * scaleY}px`, width: `${w * scaleX}px`, height: `${h * scaleY}px` };
   };
-
   return (
     <div className={styles.cameraBox} ref={containerRef}>
       {!streamUrl ? (
@@ -288,6 +299,7 @@ interface LogEntry {
   timestamp: string; 
   confidence: number | null; 
   subject_id: number | null;
+  snapshot_path: string | null;
 }
 interface Subject {
   subject_id: number;
@@ -317,6 +329,7 @@ const AccessControlPage = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [snapshotModalUrl, setSnapshotModalUrl] = useState<string | null>(null);
 
 
   const formatDateForAPI = (date: Date): string => { return date.toISOString().split('T')[0]; };
@@ -341,7 +354,8 @@ const AccessControlPage = () => {
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch logs");
-      setLogs(await response.json());
+      const data: LogEntry[] = await response.json();
+      setLogs(data);
     } catch (err) { 
       console.error("Failed to fetch initial logs:", err); 
       setLogs([]); 
@@ -356,7 +370,6 @@ const AccessControlPage = () => {
       const newLogs: LogEntry[] = await response.json();
       
       if (newLogs.length > 0) { 
-        // (กรอง Log ใหม่ที่เข้ามาให้ตรงกับ Subject ที่เลือก)
         const filteredNewLogs = newLogs.filter(log => 
           !selectedSubjectId || log.subject_id?.toString() === selectedSubjectId
         );
@@ -365,7 +378,7 @@ const AccessControlPage = () => {
         }
       }
     } catch (err) { console.error("Failed to poll new logs:", err); }
-  }, [isViewingToday, selectedSubjectId]); // (ขึ้นอยู่กับ selectedSubjectId)
+  }, [isViewingToday, selectedSubjectId]);
 
   useEffect(() => {
     fetchInitialLogs(); 
@@ -398,22 +411,10 @@ const AccessControlPage = () => {
 
   const handleSubjectChange = async (newSubjectId: string) => {
     setSelectedSubjectId(newSubjectId);
-
-    const subjectIdAsInt = newSubjectId ? parseInt(newSubjectId, 10) : null;
-
-    console.log(`Setting active subject in backend: ${subjectIdAsInt}`);
-    try {
-      const res = await fetch(`${BACKEND_URL}/attendance/set_active_subject`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject_id: subjectIdAsInt }),
-      });
-      if (!res.ok) throw new Error("Failed to set active subject");
-      const data = await res.json();
-      console.log("Backend roster updated:", data);
-    } catch (err) {
-      console.error("Failed to set active subject:", err);
-    }
+    
+    // (Commenting out this block as the endpoint /attendance/set_active_subject is not in main.py)
+    // const subjectIdAsInt = newSubjectId ? parseInt(newSubjectId, 10) : null;
+    // ...
   };
 
   const handleOpenModal = (target: 'entrance' | 'exit') => {
@@ -451,11 +452,11 @@ const AccessControlPage = () => {
   const handleSubjectDeleted = () => {
      fetchSubjects();
      if (selectedSubjectId && !subjects.find(s => s.subject_id.toString() === selectedSubjectId)) {
-        handleSubjectChange('');
+       handleSubjectChange('');
      }
   };
 
-  const handleExport = async (format: 'csv' | 'xlsx') => {
+  const handleExport = async (format: 'csv' | 'xlsx' | 'txt') => {
     console.log(`Exporting data as ${format}...`);
     setShowExportMenu(false);
     
@@ -468,20 +469,52 @@ const AccessControlPage = () => {
     if (subjectId) {
       params.append("subject_id", subjectId);
     }
-    params.append("format", format);
     
     const url = `${BACKEND_URL}/attendance/export?${params.toString()}`;
 
     try {
-      const link = document.createElement("a");
-      link.href = url;
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch export data');
+        const data: any[] = await response.json();
+        if (data.length === 0) { alert("No data to export"); return; }
+        
+        let fileContent = "";
+        const headers = Object.keys(data[0]);
+        fileContent += headers.join('\t') + '\r\n';
+        data.forEach(row => {
+            const values = headers.map(header => {
+            let val = row[header];
+            if (val === null || val === undefined) val = "N/A";
+            return `"${String(val).replace(/"/g, '""')}"`;
+            });
+            fileContent += values.join('\t') + '\r\n';
+        });
+
+        let mimeType = 'text/plain;charset=utf-8;';
+        let fileExtension = 'txt';
+
+        if (format === 'csv') {
+            mimeType = 'text/csv;charset=utf-8;';
+            fileExtension = 'csv';
+        } else if (format === 'xlsx') {
+             mimeType = 'application/vnd.ms-excel';
+             fileExtension = 'xls';
+        }
+
+        const blob = new Blob([fileContent], { type: mimeType });
+        const link = document.createElement("a");
+        const blobUrl = URL.createObjectURL(blob);
+        link.setAttribute("href", blobUrl);
+        link.setAttribute("download", `attendance_export_${dateString}.${fileExtension}`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+
     } catch (err: any) {
-      console.error("Export failed:", err);
-      alert(`Export failed: ${err.message}`);
+         console.error("Export failed:", err);
+         alert(`Export failed: ${err.message}`);
     }
   };
 
@@ -495,6 +528,12 @@ const AccessControlPage = () => {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onSubjectDeleted={handleSubjectDeleted}
+      />
+      
+      <SnapshotModal 
+        isOpen={!!snapshotModalUrl}
+        onClose={() => setSnapshotModalUrl(null)}
+        imageUrl={snapshotModalUrl}
       />
 
       <header className={styles.header}>
@@ -578,8 +617,9 @@ const AccessControlPage = () => {
               
               {showExportMenu && (
                 <div className={styles.exportMenu}>
-                  <button onClick={() => handleExport('csv')}>Export as .csv</button>
-                  <button onClick={() => handleExport('xlsx')}>Export as .xlsx</button>
+                  <button onClick={() => handleExport('txt')}>Export as .txt (Raw)</button>
+                  <button onClick={() => handleExport('csv')}>Export as .csv (Raw)</button>
+                  <button onClick={() => handleExport('xlsx')}>Export as .xls (Raw)</button>
                 </div>
               )}
             </div>
@@ -589,10 +629,18 @@ const AccessControlPage = () => {
         
         <div className={styles.tableContainer}>
           <table className={styles.attendanceTable}>
-            <thead><tr><th>Time</th><th>Name</th><th>ID</th><th>Status</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Name</th>
+                <th>ID</th>
+                <th>Status</th>
+                <th>Snapshot</th>
+              </tr>
+            </thead>
             <tbody>
               {logs.length === 0 ? (
-                <tr><td colSpan={4} className={styles.noLogs}>No logs found for this day.</td></tr>
+                <tr><td colSpan={5} className={styles.noLogs}>No logs found for this day.</td></tr>
               ) : (
                 logs.map((log) => (
                   <tr key={log.log_id}>
@@ -600,6 +648,22 @@ const AccessControlPage = () => {
                     <td className={styles.tableCellText}>{log.user_name}</td>
                     <td className={styles.tableCellText}>{log.student_code}</td>
                     <td className={styles.tableCellStatus}><span className={log.action === 'enter' ? styles.statusPresent : styles.statusLate}>{log.action}</span></td>
+                    
+                    <td className={styles.tableCellSnapshot}>
+                      {log.snapshot_path ? (
+                        <img 
+                          // ✨ [แก้ไข] ใช้ Optional Chaining (?.)
+                          src={`${BACKEND_URL}/${log.snapshot_path?.replace(/\\/g, '/')}`} 
+                          alt="Snapshot"
+                          className={styles.snapshotImage} 
+                          loading="lazy"
+                          // ✨ [แก้ไข] ใช้ Optional Chaining (?.)
+                          onClick={() => setSnapshotModalUrl(`${BACKEND_URL}/${log.snapshot_path?.replace(/\\/g, '/')}`)}
+                        />
+                      ) : (
+                        'N/A'
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
