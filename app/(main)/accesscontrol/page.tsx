@@ -1,5 +1,6 @@
 'use client';
 
+// (Imports ทั้งหมดเหมือนเดิม)
 import React, { useEffect, useRef, useState, useCallback, FormEvent } from 'react';
 import { Settings, Download, X, VideoOff, Plus, Loader2, Save, Trash2 } from 'lucide-react';
 import styles from './accesscontrol.module.css';
@@ -9,17 +10,16 @@ const BACKEND_URL = 'http://localhost:8000';
 const WS_BACKEND_URL = 'ws://localhost:8000';
 
 // --- (SettingsModal Component) ---
+// (โค้ดส่วนนี้เหมือนเดิม)
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectDevice: (src: string) => void;
 }
 interface DiscoveredDevice { src: string; width: number; height: number; readable: boolean; }
-
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSelectDevice }) => {
   const [devices, setDevices] = useState<DiscoveredDevice[]>([]);
   const selectRef = useRef<HTMLSelectElement>(null);
-
   useEffect(() => {
     const getBackendDevices = async () => {
       try {
@@ -31,7 +31,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSelect
     };
     if (isOpen) { getBackendDevices(); }
   }, [isOpen]);
-
   if (!isOpen) return null;
   const handleConfirm = () => {
     if (selectRef.current?.value) {
@@ -60,19 +59,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSelect
 };
 
 // --- (AddSubjectModal Component) ---
+// (โค้ดส่วนนี้เหมือนเดิม)
 interface AddSubjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubjectAdded: () => void;
 }
-
 const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSubjectAdded }) => {
   const [subjectName, setSubjectName] = useState('');
   const [section, setSection] = useState('');
   const [schedule, setSchedule] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-
   useEffect(() => {
     if (isOpen) {
       setSubjectName('');
@@ -81,12 +79,10 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSu
       setError('');
     }
   }, [isOpen]);
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     if (!subjectName.trim()) { setError('Subject Name is required'); return; }
-
     setIsSubmitting(true);
     try {
       const res = await fetch(`${BACKEND_URL}/subjects`, {
@@ -98,7 +94,6 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSu
           schedule: schedule || null,
         }),
       });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.detail || 'Failed to create subject');
@@ -111,63 +106,32 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSu
       setIsSubmitting(false);
     }
   };
-
   const handleSectionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (/^\d*$/.test(value)) {
       setSection(value);
     }
   };
-
   if (!isOpen) return null;
-
   return (
     <div className={styles.modalBackdrop} onClick={onClose} style={{ zIndex: 1100 }}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose}><X size={20} /></button>
         <h2>Create New Subject</h2>
-        
         <form onSubmit={handleSubmit} className={styles.modalForm}>
           <div className={styles.formGroup}>
             <label htmlFor="subjectName">Subject Name <span style={{ color: '#ef4444' }}>*</span></label>
-            <input 
-              id="subjectName"
-              type="text" 
-              value={subjectName} 
-              onChange={e => setSubjectName(e.target.value)} 
-              placeholder="e.g. Computer Vision"
-              disabled={isSubmitting} 
-              required 
-            />
+            <input id="subjectName" type="text" value={subjectName} onChange={e => setSubjectName(e.target.value)} placeholder="e.g. Computer Vision" disabled={isSubmitting} required />
           </div>
-          
           <div className={styles.formGroup}>
              <label htmlFor="section">Section (Optional)</label>
-             <input 
-               id="section"
-               type="text" 
-               inputMode="numeric"
-               value={section} 
-               onChange={handleSectionChange}
-               placeholder="e.g. 001"
-               disabled={isSubmitting} 
-             />
+             <input id="section" type="text" inputMode="numeric" value={section} onChange={handleSectionChange} placeholder="e.g. 001" disabled={isSubmitting} />
           </div>
-
           <div className={styles.formGroup}>
              <label htmlFor="schedule">Schedule (Optional)</label>
-             <input 
-               id="schedule"
-               type="text" 
-               value={schedule} 
-               onChange={e => setSchedule(e.target.value)} 
-               placeholder="e.g. Monday 09:00-12:00"
-               disabled={isSubmitting} 
-             />
+             <input id="schedule" type="text" value={schedule} onChange={e => setSchedule(e.target.value)} placeholder="e.g. Monday 09:00-12:00" disabled={isSubmitting} />
           </div>
-
           {error && <p className={styles.errorText}>{error}</p>}
-
           <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className={styles.spinner} /> : 'Create'}
           </button>
@@ -177,17 +141,15 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSu
   );
 };
 
-
 // --- (SnapshotModal Component) ---
+// (โค้ดส่วนนี้เหมือนเดิม)
 interface SnapshotModalProps {
   isOpen: boolean;
   onClose: () => void;
   imageUrl: string | null;
 }
-
 const SnapshotModal: React.FC<SnapshotModalProps> = ({ isOpen, onClose, imageUrl }) => {
   if (!isOpen || !imageUrl) return null;
-
   return (
     <div className={styles.modalBackdrop} onClick={onClose} style={{ zIndex: 1200 }}>
       <div className={styles.snapshotModalContent} onClick={(e) => e.stopPropagation()}>
@@ -198,8 +160,8 @@ const SnapshotModal: React.FC<SnapshotModalProps> = ({ isOpen, onClose, imageUrl
   );
 };
 
-
 // --- (Custom Hook WebSocket) ---
+// (โค้ดส่วนนี้เหมือนเดิม)
 interface AIResult { name: string; box: [number, number, number, number]; similarity?: number | null; matched: boolean; display_name: string; }
 interface AIData { results: AIResult[]; ai_width: number; ai_height: number; }
 const useAIResults = (camId: string, streamKey: string) => {
@@ -244,6 +206,7 @@ const useAIResults = (camId: string, streamKey: string) => {
 };
 
 // --- (CameraBox Component) ---
+// (โค้ดส่วนนี้เหมือนเดิม)
 interface CameraBoxProps {
   camId: 'entrance' | 'exit';
   streamKey: string;
@@ -290,6 +253,7 @@ const CameraBox: React.FC<CameraBoxProps> = ({ camId, streamKey, onSettingsClick
 };
 
 // --- (Interfaces) ---
+// (โค้ดส่วนนี้เหมือนเดิม)
 interface LogEntry { 
   log_id: number; 
   user_id: number; 
@@ -310,6 +274,7 @@ interface Subject {
 
 // --- (Main Page Component) ---
 const AccessControlPage = () => {
+  // (โค้ด state เดิม)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTargetCamera, setCurrentTargetCamera] = useState<'entrance' | 'exit' | null>(null);
   const [selectedSources, setSelectedSources] = useState({ entrance: '', exit: '' });
@@ -317,7 +282,7 @@ const AccessControlPage = () => {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  const [lateTime, setLateTime] = useState('09:30');
+  const [lateTime, setLateTime] = useState('09:30'); // 👈 (State นี้คือตัวกำหนดเวลาสาย)
   
   const [selectedDate, setSelectedDate] = useState(new Date());
   const isViewingToday = selectedDate.toDateString() === new Date().toDateString();
@@ -411,10 +376,6 @@ const AccessControlPage = () => {
 
   const handleSubjectChange = async (newSubjectId: string) => {
     setSelectedSubjectId(newSubjectId);
-    
-    // (Commenting out this block as the endpoint /attendance/set_active_subject is not in main.py)
-    // const subjectIdAsInt = newSubjectId ? parseInt(newSubjectId, 10) : null;
-    // ...
   };
 
   const handleOpenModal = (target: 'entrance' | 'exit') => {
@@ -457,27 +418,23 @@ const AccessControlPage = () => {
   };
 
   const handleExport = async (format: 'csv' | 'xlsx' | 'txt') => {
+    // (โค้ดส่วนนี้เหมือนเดิม)
     console.log(`Exporting data as ${format}...`);
     setShowExportMenu(false);
-    
     const dateString = formatDateForAPI(selectedDate);
     const subjectId = selectedSubjectId;
-    
     const params = new URLSearchParams();
     params.append("start_date", dateString);
     params.append("end_date", dateString);
     if (subjectId) {
       params.append("subject_id", subjectId);
     }
-    
     const url = `${BACKEND_URL}/attendance/export?${params.toString()}`;
-
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch export data');
         const data: any[] = await response.json();
         if (data.length === 0) { alert("No data to export"); return; }
-        
         let fileContent = "";
         const headers = Object.keys(data[0]);
         fileContent += headers.join('\t') + '\r\n';
@@ -489,10 +446,8 @@ const AccessControlPage = () => {
             });
             fileContent += values.join('\t') + '\r\n';
         });
-
         let mimeType = 'text/plain;charset=utf-8;';
         let fileExtension = 'txt';
-
         if (format === 'csv') {
             mimeType = 'text/csv;charset=utf-8;';
             fileExtension = 'csv';
@@ -500,7 +455,6 @@ const AccessControlPage = () => {
              mimeType = 'application/vnd.ms-excel';
              fileExtension = 'xls';
         }
-
         const blob = new Blob([fileContent], { type: mimeType });
         const link = document.createElement("a");
         const blobUrl = URL.createObjectURL(blob);
@@ -511,7 +465,6 @@ const AccessControlPage = () => {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(blobUrl);
-
     } catch (err: any) {
          console.error("Export failed:", err);
          alert(`Export failed: ${err.message}`);
@@ -647,17 +600,45 @@ const AccessControlPage = () => {
                     <td className={styles.tableCellText}>{new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</td>
                     <td className={styles.tableCellText}>{log.user_name}</td>
                     <td className={styles.tableCellText}>{log.student_code}</td>
-                    <td className={styles.tableCellStatus}><span className={log.action === 'enter' ? styles.statusPresent : styles.statusLate}>{log.action}</span></td>
+                    
+                    {/* ✨ --- [ นี่คือส่วนที่แก้ไข ] --- ✨ */}
+                    <td className={styles.tableCellStatus}>
+                      {(() => {
+                        // 1. ถ้าเป็น 'exit' ให้แสดง 'exit' (สีแดง)
+                        if (log.action === 'exit') {
+                          return <span className={styles.statusLate}>Exit</span>;
+                        }
+                        
+                        // 2. ถ้าเป็น 'enter' ให้เปรียบเทียบเวลา
+                        try {
+                          // ดึงเวลาสายที่ตั้งค่าไว้ (เช่น "09:30")
+                          const [lateHour, lateMinute] = lateTime.split(':').map(Number);
+                          // ดึงเวลาที่เช็คชื่อ
+                          const logTime = new Date(log.timestamp);
+                          
+                          // เปรียบเทียบ
+                          const isLate = logTime.getHours() > lateHour || 
+                                         (logTime.getHours() === lateHour && logTime.getMinutes() > lateMinute);
+
+                          if (isLate) {
+                            return <span className={styles.statusLate}>Enter (Late)</span>;
+                          } else {
+                            return <span className={styles.statusPresent}>Enter (On-Time)</span>;
+                          }
+                        } catch (e) {
+                          // กรณีเกิด Error (เช่น lateTime ว่างเปล่า)
+                          return <span className={styles.statusPresent}>Enter</span>;
+                        }
+                      })()}
+                    </td>
                     
                     <td className={styles.tableCellSnapshot}>
                       {log.snapshot_path ? (
                         <img 
-                          // ✨ [แก้ไข] ใช้ Optional Chaining (?.)
                           src={`${BACKEND_URL}/${log.snapshot_path?.replace(/\\/g, '/')}`} 
                           alt="Snapshot"
                           className={styles.snapshotImage} 
                           loading="lazy"
-                          // ✨ [แก้ไข] ใช้ Optional Chaining (?.)
                           onClick={() => setSnapshotModalUrl(`${BACKEND_URL}/${log.snapshot_path?.replace(/\\/g, '/')}`)}
                         />
                       ) : (
