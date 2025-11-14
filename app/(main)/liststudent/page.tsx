@@ -13,21 +13,21 @@ interface UserFace {
   file_path: string;
 }
 
-// ✨ [แก้ไข] เพิ่ม subject_id
 interface User {
   user_id: number;
   name: string;
   student_code: string | null;
   role: string;
   faces: UserFace[];
-  subject_id: number | null; // (เพิ่ม)
+  subject_id: number | null;
 }
 
-// ✨ [เพิ่ม] Interface สำหรับ Subject
+// ✨ [ 1. แก้ไข ] เพิ่ม academic_year
 interface Subject {
   subject_id: number;
   subject_name: string;
   section?: string | null;
+  academic_year?: string | null; // (เพิ่ม)
 }
 
 // --- Component: StudentCard ---
@@ -81,7 +81,7 @@ interface AddStudentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStudentAdded: () => void;
-  subjects: Subject[]; // รับ props subjects
+  subjects: Subject[];
 }
 
 const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onStudentAdded, subjects }) => {
@@ -139,7 +139,6 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSt
     setIsSubmitting(true);
 
     try {
-      // ส่ง subject_id ไปด้วย
       const userResponse = await fetch(`${BACKEND_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -147,7 +146,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSt
           name,
           student_code: studentCode,
           role: 'viewer',
-          subject_id: subjectId ? parseInt(subjectId, 10) : null // (ส่ง ID)
+          subject_id: subjectId ? parseInt(subjectId, 10) : null
         }),
       });
       if (!userResponse.ok) {
@@ -201,9 +200,11 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSt
               disabled={isSubmitting}
             >
               <option value="">-- Assign to a Subject --</option>
+              {/* ✨ [ 2. แก้ไข ] อัปเดตการแสดงผล */}
               {subjects.map(s => (
                 <option key={s.subject_id} value={s.subject_id}>
-                  {s.subject_name} {s.section ? `(${s.section})` : ''}
+                  {s.academic_year ? `[${s.academic_year}] ` : ''}
+                  {s.subject_name} {s.section ? `(Sec: ${s.section})` : ''}
                 </option>
               ))}
             </select>
@@ -295,13 +296,10 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
 
   const handleDeleteExistingFace = async (faceId: number) => {
     if (!window.confirm("Delete this image?")) return;
-
-    // แก้เงื่อนไขเป็นอย่างน้อย 4 รูป
     if (existingFaces.length + newFiles.length <= 4) {
       setError(`ต้องมีรูปภาพอย่างน้อย 4 รูป (ห้ามลบ)`);
       return;
     }
-
     try {
       const res = await fetch(`${BACKEND_URL}/faces/${faceId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
@@ -313,20 +311,15 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-
     const totalImages = existingFaces.length + newFiles.length;
-
     if (totalImages < 4) {
       setError(`กรุณาเพิ่มรูปภาพให้ครบอย่างน้อย 4 รูป (ขาดอีก ${4 - totalImages} รูป)`);
       return;
     }
-
     if (!name.trim()) { setError('กรุณากรอกชื่อนักศึกษา'); return; }
     if (!studentCode.trim()) { setError('กรุณากรอกรหัสนักศึกษา'); return; }
-
     setIsSubmitting(true);
     try {
-      // ตรวจสอบว่ามีอะไรเปลี่ยนบ้าง
       const infoChanged =
         name !== student.name ||
         studentCode !== student.student_code ||
@@ -345,7 +338,6 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
           }),
         });
         if (!res.ok) throw new Error('Failed to update info');
-        // (ถ้าเปลี่ยนชื่อ หรือ ย้ายวิชา ก็ควร Train ใหม่)
         if (name !== student.name) needsTrain = true;
       }
       
@@ -355,10 +347,9 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
         newFiles.forEach(f => formData.append('images', f));
         const res = await fetch(`${BACKEND_URL}/faces/upload`, { method: 'POST', body: formData });
         if (!res.ok) throw new Error('Failed to upload images');
-        needsTrain = true; // (เพิ่มรูปใหม่ ต้อง Train)
+        needsTrain = true;
       }
       
-      // (Train ครั้งเดียวถ้าจำเป็น)
       if (needsTrain) {
         await fetch(`${BACKEND_URL}/train/refresh`, { method: 'POST' });
       }
@@ -378,7 +369,6 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
           <div className={styles.formGroup}><label>Student ID</label><input type="text" value={studentCode} onChange={e => /^[0-9]*$/.test(e.target.value) && setStudentCode(e.target.value)} disabled={isSubmitting} /></div>
           <div className={styles.formGroup}><label>Name</label><input type="text" value={name} onChange={e => setName(e.target.value)} disabled={isSubmitting} /></div>
 
-          {/* Dropdown เลือกวิชา */}
           <div className={styles.formGroup}>
             <label>Subject</label>
             <select
@@ -388,9 +378,11 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
               disabled={isSubmitting}
             >
               <option value="">-- Assign to a Subject --</option>
+              {/* ✨ [ 3. แก้ไข ] อัปเดตการแสดงผล */}
               {subjects.map(s => (
                 <option key={s.subject_id} value={s.subject_id}>
-                  {s.subject_name} {s.section ? `(${s.section})` : ''}
+                  {s.academic_year ? `[${s.academic_year}] ` : ''}
+                  {s.subject_name} {s.section ? `(Sec: ${s.section})` : ''}
                 </option>
               ))}
             </select>
@@ -444,11 +436,10 @@ const ListStudentPage = () => {
       setStudents(await res.json());
     } catch (err) { 
       console.error(err); 
-      setStudents([]); // (Set เป็นค่าว่างถ้า Error)
+      setStudents([]);
     }
   }, []);
 
-  // ฟังก์ชันดึง Subjects
   const fetchSubjects = useCallback(async () => {
     try {
       const res = await fetch(`${BACKEND_URL}/subjects`);
@@ -456,11 +447,10 @@ const ListStudentPage = () => {
       setSubjects(await res.json());
     } catch (err) { 
       console.error(err); 
-      setSubjects([]); // (Set เป็นค่าว่างถ้า Error)
+      setSubjects([]);
     }
   }, []);
 
-  // ให้ดึง 2 อย่างพร้อมกัน
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -473,7 +463,6 @@ const ListStudentPage = () => {
     loadData();
   }, [fetchStudents, fetchSubjects]);
 
-  // (รวม Callback 2 อัน)
   const handleDataUpdated = () => {
     fetchStudents();
     fetchSubjects();
@@ -490,7 +479,6 @@ const ListStudentPage = () => {
 
   return (
     <div className={styles.pageContainer}>
-      {/* ส่ง prop 'subjects' เข้าไป */}
       <AddStudentModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onStudentAdded={handleDataUpdated} subjects={subjects} />
       <EditStudentModal isOpen={!!editingStudent} onClose={() => setEditingStudent(null)} student={editingStudent} onStudentUpdated={handleDataUpdated} subjects={subjects} />
 

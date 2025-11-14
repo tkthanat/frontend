@@ -169,8 +169,6 @@
     border-radius: 0.75rem;
     padding: 1.5rem;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-    
-    /* flex-1 และ display: flex */
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -244,7 +242,8 @@
 .attendanceTable tbody tr { border-bottom: 1px solid #f1f5f9; }
 .attendanceTable tbody tr:last-child { border-bottom: none; }
 .statusPresent { color: #16a34a; font-weight: 500; }
-.statusLate { color: #dc2626; font-weight: 500; }
+.statusLate { color: #f59e0b; font-weight: 500; }
+.statusExit { color: #ff0000; font-weight: 500; }
 .noLogs { text-align: center; padding: 1rem; color: #64748b; }
 
 /* --- Snapshot Cell Styles --- */
@@ -267,7 +266,6 @@
     transform: scale(1.05);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
-
 
 /* --- Modal Styles --- */
 .modalBackdrop {
@@ -509,4 +507,59 @@
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* ✨ [ เพิ่ม ] สไตล์สำหรับตัวนับนักเรียน */
+.studentCounter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #3b82f6; /* (สีน้ำเงิน) */
+    background-color: #eff6ff; /* (สีน้ำเงินอ่อน) */
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid #dbeafe;
+    height: 40px;
+}
+
+/* (สไตล์สำหรับ DeleteSubjectModal) */
+.deleteListContainer {
+  margin-top: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.deleteItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.deleteItem:last-child { border-bottom: none; }
+.deleteItem span {
+  font-size: 16px;
+  color: #334155;
+  font-weight: 500;
+}
+.deleteIcon {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+.deleteIcon:hover { background-color: #fee2e2; }
+.deleteIcon:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+  background-color: transparent;
 }

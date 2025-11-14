@@ -2,24 +2,20 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import styles from './dashboard.module.css';
-import { Download, Users, BarChart, TrendingUp, PieChart, Clock, Loader2 } from 'lucide-react';
+import { 
+  Loader2, Users, BarChart, Clock, PieChart, TrendingUp, Calendar, ChevronDown, 
+  CheckCircle, XCircle, AlertTriangle, Download
+} from 'lucide-react';
 
 // (Import Chart.js components)
 import { Bar, Line, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement,
-  LineElement,
-  ArcElement,
+  CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
+  PointElement, LineElement, ArcElement,
 } from 'chart.js';
 
-// 1. Import Library ที่ติดตั้งใหม่
+// Import Library สำหรับ Export
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -30,28 +26,74 @@ ChartJS.register(
   PointElement, LineElement, ArcElement
 );
 
-// --- Interfaces ---
+// ⭐️ [ นี่คือบรรทัดที่เพิ่มเข้ามา ] ⭐️
+ChartJS.defaults.color = '#000000'; // (ตั้งค่าสีตัวอักษรเริ่มต้นของกราฟทั้งหมดเป็นสีดำ)
+
+
+// --- Interfaces (กำหนดโครงสร้างข้อมูลที่คาดหวังจาก API ใหม่) ---
 const BACKEND_URL = 'http://localhost:8000';
 
-interface LogEntry {
-  log_id: number;
-  user_id: number;
-  subject_id: number;
-  action: "enter" | "exit";
-  timestamp: string; // ISO string
-  user_name: string;
-  student_code: string;
-  subject_name: string | null;
+interface ISubject {
+  id: string;
+  name: string; // e.g., "[2024] SP405 (Sec: 1)"
 }
-interface DashboardData {
-  totalAttendance: number;
-  uniqueStudents: number;
-  avgPerDay: number;
-  avgPerStudent: number;
-  byDayData: { labels: string[], datasets: any[] };
-  trendData: { labels: string[], datasets: any[] };
-  byTimeData: { labels: string[], datasets: any[] };
-  byCourseData: { labels: string[], datasets: any[] };
+
+// === 1. Semester Overview Data ===
+interface ISemesterOverviewData {
+  kpis: {
+    totalRoster: number;
+    avgAttendance: number; // (88.5)
+    avgLateness: number;   // (12)
+    sessionsTaught: number;
+  };
+  trendGraph: { // 1B. กราฟแนวโน้ม
+    labels: string[]; // ["Week 1", "Week 2", ...]
+    datasets: [{
+      label: '% การเข้าเรียน',
+      data: number[]; // [90, 85, 88, ...]
+      borderColor: string;
+      fill: boolean;
+    }];
+  };
+  studentsAtRisk: { // 1C. ตารางนักศึกษา
+    studentId: string;
+    name: string;
+    absences: number;
+    lates: number;
+  }[];
+}
+
+// === 2. Session-Specific View Data ===
+interface ISessionViewData {
+  kpis: {
+    present: number;
+    total: number;
+    absent: number;
+    late: number;
+  };
+  summaryDonut: { // 2B. กราฟสรุป
+    labels: string[]; // ["เข้าเรียน (ตรงเวลา)", "มาสาย", "ขาด"]
+    datasets: [{
+      data: number[]; // [23, 5, 2]
+      backgroundColor: string[];
+    }];
+  };
+  arrivalHistogram: { // 2C. กราฟการกระจายเวลา
+    labels: string[]; // ["08:50", "09:00", "09:10", ...]
+    datasets: [{
+      label: 'จำนวนนักเรียน',
+      data: number[];
+      backgroundColor: string;
+    }];
+  };
+  liveDataTable: { // 2D. ตารางข้อมูลสด
+    studentId: string;
+    name: string;
+    status: "Present" | "Late" | "Absent";
+    checkIn: string | null; // "09:01"
+    checkOut: string | null; // "11:58"
+    duration: string | null; // "177" (นาที)
+  }[];
 }
 
 // --- Component: StatCard ---
@@ -66,8 +108,8 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode }
 );
 
 // --- Component: ChartContainer ---
-const ChartContainer: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className={styles.chartContainer}>
+const ChartContainer: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className = '' }) => (
+  <div className={`${styles.chartContainer} ${className}`}>
     <h3 className={styles.chartTitle}>{title}</h3>
     <div className={styles.chartContent}>
       {children}
@@ -75,90 +117,173 @@ const ChartContainer: React.FC<{ title: string; children: React.ReactNode }> = (
   </div>
 );
 
+// --- Component: ตารางนักศึกษาที่ต้องติดตาม (1C) ---
+const StudentsAtRiskTable: React.FC<{ data: ISemesterOverviewData['studentsAtRisk'] }> = ({ data }) => (
+  <div className={styles.tableContainer}>
+    <table className={styles.dataTable}>
+      <thead>
+        <tr>
+          <th>ชื่อ-สกุล</th>
+          <th>รหัสนักศึกษา</th>
+          <th>ขาด (Absences)</th>
+          <th>สาย (Lates)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map(student => (
+          <tr key={student.studentId}>
+            <td>{student.name}</td>
+            <td>{student.studentId}</td>
+            <td>{student.absences} ครั้ง</td>
+            <td>{student.lates} ครั้ง</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+// --- Component: ตารางข้อมูลสด (2D) ---
+const LiveSessionTable: React.FC<{ data: ISessionViewData['liveDataTable'] }> = ({ data }) => (
+  <div className={styles.tableContainer}>
+    <table className={styles.dataTable}>
+      <thead>
+        <tr>
+          <th>ชื่อ-สกุล</th>
+          <th>สถานะ</th>
+          <th>เวลาเข้า</th>
+          <th>เวลาออก</th>
+          <th>ระยะเวลา (นาที)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map(student => (
+          <tr key={student.studentId}>
+            <td>{student.name}</td>
+            <td>
+              <span className={`${styles.statusBadge} ${styles[student.status.toLowerCase()]}`}>
+                {student.status === 'Present' && <CheckCircle size={14} />}
+                {student.status === 'Late' && <AlertTriangle size={14} />}
+                {student.status === 'Absent' && <XCircle size={14} />}
+                {student.status}
+              </span>
+            </td>
+            <td>{student.checkIn || '---'}</td>
+            <td>{student.checkOut || '---'}</td>
+            <td>{student.duration || '---'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
 // --- Component: หน้าหลัก Dashboard ---
-const DashboardPage = () => {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+const FacultyDashboardPage = () => {
+  // --- State สำหรับ Filters ---
+  const [subjects, setSubjects] = useState<ISubject[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  // --- State สำหรับ Data Section 1 ---
+  const [semesterData, setSemesterData] = useState<ISemesterOverviewData | null>(null);
+  const [isSemesterLoading, setIsSemesterLoading] = useState(true);
+
+  // --- State สำหรับ Data Section 2 ---
+  const [sessionData, setSessionData] = useState<ISessionViewData | null>(null);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
+
+  // --- State และ Ref สำหรับ Export ---
   const [showExportMenu, setShowExportMenu] = useState(false);
-  
-  // 2. แก้ไขชื่อ Ref
-  const dashboardContentRef = useRef<HTMLDivElement>(null); // (Ref สำหรับชี้ไปที่ "เนื้อหา" ที่จะถ่ายรูป)
   const [isExporting, setIsExporting] = useState(false);
+  const contentAreaRef = useRef<HTMLDivElement>(null); // (Ref สำหรับหุ้มเนื้อหา)
 
-  // --- (ฟังก์ชัน processLogData - เหมือนเดิม) ---
-  const processLogData = (logs: LogEntry[]): DashboardData => {
-    // ... (โค้ดเหมือนเดิม) ...
-    const enterLogs = logs.filter(log => log.action === 'enter');
-    const totalAttendance = enterLogs.length;
-    const uniqueStudentIds = new Set(enterLogs.map(log => log.user_id));
-    const uniqueStudents = uniqueStudentIds.size;
-    const avgPerStudent = (uniqueStudents > 0) ? (totalAttendance / uniqueStudents).toFixed(1) : '0';
-    const uniqueDays = new Set(enterLogs.map(log => log.timestamp.split('T')[0]));
-    const avgPerDay = (uniqueDays.size > 0) ? (totalAttendance / uniqueDays.size).toFixed(1) : '0';
-    const dayCounts: { [key: number]: number } = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-    enterLogs.forEach(log => { const day = new Date(log.timestamp).getDay(); dayCounts[day] += 1; });
-    const byDayData = {
-      labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-      datasets: [{ label: 'Attendance', data: [dayCounts[1], dayCounts[2], dayCounts[3], dayCounts[4], dayCounts[5]], backgroundColor: 'rgba(99, 102, 241, 0.7)', }],
-    };
-    const monthCounts = new Array(6).fill(0);
-    enterLogs.forEach(log => { const month = new Date(log.timestamp).getMonth(); if (month < 6) { monthCounts[month] += 1; }});
-    const trendData = {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      datasets: [{ label: 'Attendance Trend', data: monthCounts, fill: false, borderColor: 'rgb(34, 197, 94)', tension: 0.1, }],
-    };
-    const timeLabels = ['08:30', '09:30', '10:30', '11:30', '13:30', '14:30'];
-    const timeCounts = new Array(timeLabels.length).fill(0);
-    enterLogs.forEach(log => {
-      const date = new Date(log.timestamp); const hour = date.getHours();
-      if (hour < 9) timeCounts[0]++; else if (hour < 10) timeCounts[1]++; else if (hour < 11) timeCounts[2]++;
-      else if (hour < 12) timeCounts[3]++; else if (hour < 14) timeCounts[4]++; else if (hour < 15) timeCounts[5]++;
-    });
-    const byTimeData = {
-      labels: timeLabels, datasets: [{ label: 'Attendance by Time', data: timeCounts, backgroundColor: 'rgba(245, 158, 11, 0.7)', }],
-    };
-    const courseCounts: { [key: string]: number } = {};
-    enterLogs.forEach(log => { const courseName = log.subject_name || 'Unassigned'; courseCounts[courseName] = (courseCounts[courseName] || 0) + 1; });
-    const byCourseData = {
-      labels: Object.keys(courseCounts),
-      datasets: [{ label: 'By Course', data: Object.values(courseCounts), backgroundColor: ['rgba(99, 102, 241, 0.7)', 'rgba(34, 197, 94, 0.7)', 'rgba(245, 158, 11, 0.7)',], hoverOffset: 4, }],
-    };
-    return { totalAttendance, uniqueStudents, avgPerDay: parseFloat(avgPerDay), avgPerStudent: parseFloat(avgPerStudent), byDayData, trendData, byTimeData, byCourseData };
-  };
-  
-  // --- (ฟังก์ชัน fetchAndProcessData - เหมือนเดิม) ---
-  const fetchAndProcessData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${BACKEND_URL}/attendance/logs`);
-      if (!response.ok) throw new Error('Failed to fetch logs');
-      const logs: LogEntry[] = await response.json();
-      const processedData = processLogData(logs);
-      setData(processedData);
-    } catch (err) { console.error(err); } 
-    finally { setIsLoading(false); }
-  }, []);
+  // --- Fetching Data ---
 
+  // (1) Fetch รายวิชา (Subjects) ตอนโหลดหน้า
   useEffect(() => {
-    fetchAndProcessData();
-  }, [fetchAndProcessData]);
+    const fetchSubjects = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/faculty/subjects`);
+        if (!response.ok) throw new Error('Failed to fetch subjects');
+        const data: ISubject[] = await response.json();
+        
+        setSubjects(data);
+        if (data.length > 0) {
+          setSelectedSubject(data[0].id);
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      }
+    };
+    fetchSubjects();
+  }, []); 
 
-  // 3. แก้ไขฟังก์ชันนี้ทั้งหมด ]
+  // (2) Fetch ข้อมูลภาพรวมเทอม (Section 1) เมื่อ "วิชา" เปลี่ยน
+  useEffect(() => {
+    if (!selectedSubject) return;
+
+    const fetchSemesterData = async () => {
+      setIsSemesterLoading(true);
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/faculty/semester-overview?subjectId=${selectedSubject}`);
+        if (!response.ok) throw new Error('Failed to fetch semester data');
+        const data: ISemesterOverviewData = await response.json();
+
+        setSemesterData(data);
+
+      } catch (error) {
+        console.error("Error fetching semester data:", error);
+        setSemesterData(null); 
+      } finally {
+        setIsSemesterLoading(false);
+      }
+    };
+    
+    fetchSemesterData();
+  }, [selectedSubject]); 
+
+  // (3) Fetch ข้อมูลรายคาบ (Section 2) เมื่อ "วิชา" หรือ "วันที่" เปลี่ยน
+  useEffect(() => {
+    if (!selectedSubject || !selectedDate) return;
+
+    const fetchSessionData = async () => {
+      setIsSessionLoading(true);
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/faculty/session-view?subjectId=${selectedSubject}&date=${selectedDate}`);
+        if (!response.ok) throw new Error('Failed to fetch session data');
+        const data: ISessionViewData = await response.json();
+        
+        setSessionData(data);
+
+      } catch (error) {
+        console.error("Error fetching session data:", error);
+        setSessionData(null); 
+      } finally {
+        setIsSessionLoading(false);
+      }
+    };
+    
+    fetchSessionData();
+  }, [selectedSubject, selectedDate]); 
+
+
+  // --- ฟังก์ชัน Export ---
   const handleExport = async (format: 'pdf' | 'png' | 'summary_xlsx' | 'raw_logs_xlsx') => {
-    setShowExportMenu(false); // (สั่งปิดเมนู)
+    setShowExportMenu(false);
 
-    // --- (A. Visual Formats - แก้ไขให้ถ่ายรูปเฉพาะเนื้อหา) ---
+    // --- (A. Visual Formats - PDF/PNG) ---
     if (format === 'pdf' || format === 'png') {
-      if (!dashboardContentRef.current) {
+      if (!contentAreaRef.current) {
         alert("Error: Cannot find dashboard content.");
         return;
       }
       
       console.log(`Exporting visual as ${format}...`);
-      setIsExporting(true); // (แสดง Loading)
+      setIsExporting(true);
 
       try {
-        const canvas = await html2canvas(dashboardContentRef.current, { // (ใช้ Ref ใหม่)
+        const canvas = await html2canvas(contentAreaRef.current, {
           useCORS: true,
           scale: 2,
         });
@@ -167,7 +292,7 @@ const DashboardPage = () => {
 
         if (format === 'png') {
           const link = document.createElement('a');
-          link.download = 'dashboard_report.png';
+          link.download = `faculty_report_${selectedSubject}.png`;
           link.href = imgData;
           link.click();
         } 
@@ -192,23 +317,24 @@ const DashboardPage = () => {
           } else {
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfImgHeight);
           }
-          pdf.save('dashboard_report.pdf');
+          pdf.save(`faculty_report_${selectedSubject}.pdf`);
         }
 
       } catch (err) {
         console.error("Failed to create visual export:", err);
         alert("Failed to create visual export.");
       } finally {
-        setIsExporting(false); // (ซ่อน Loading)
+        setIsExporting(false);
       }
-      return; // (จบการทำงาน)
+      return;
     }
 
-    // --- (B. Raw Log Format - เหมือนเดิม) ---
+    // --- (B. Raw Log Format - API เดิม) ---
     if (format === 'raw_logs_xlsx') {
       console.log(`Exporting all raw logs as XLSX...`);
       const params = new URLSearchParams();
-      params.append("format", "xlsx"); // (บังคับเป็น XLSX)
+      params.append("format", "xlsx");
+      
       const url = `${BACKEND_URL}/attendance/export?${params.toString()}`;
       try {
         const link = document.createElement("a");
@@ -221,55 +347,66 @@ const DashboardPage = () => {
         console.error("Export failed:", err);
         alert(`Export failed: ${err.message}`);
       }
-      return; // (จบการทำงาน)
+      return;
     }
     
-    // --- (C. Summary Data Format - [ใหม่!] สร้างจาก Frontend) ---
+    // --- (C. Summary Data Format - [ปรับปรุงใหม่!]) ---
     if (format === 'summary_xlsx') {
-      if (!data) return;
+      if (!semesterData || !sessionData) {
+        alert("Data is not fully loaded. Cannot export summary.");
+        return;
+      }
       console.log('Exporting summary data as XLSX...');
       setIsExporting(true);
       
       try {
-        // 1. สร้าง Workbook
         const wb = utils.book_new();
 
-        // 2. Sheet 1: Stats
-        const statsData = [
-          { "Statistic": "Total Attendance (All Time)", "Value": data.totalAttendance },
-          { "Statistic": "Average Attendance per Day", "Value": data.avgPerDay },
-          { "Statistic": "Unique Students Attended", "Value": data.uniqueStudents },
-          { "Statistic": "Average Attendance per Student", "Value": data.avgPerStudent },
-        ];
-        const ws_stats = utils.json_to_sheet(statsData);
-        utils.book_append_sheet(wb, ws_stats, "Key Stats");
+        // Sheet 1: Semester KPIs
+        const ws_sem_kpi = utils.json_to_sheet([
+          { "Metric": "Total Roster", "Value": semesterData.kpis.totalRoster, "Unit": "คน" },
+          { "Metric": "Avg. Attendance", "Value": semesterData.kpis.avgAttendance, "Unit": "%" },
+          { "Metric": "Avg. Lateness", "Value": semesterData.kpis.avgLateness, "Unit": "%" },
+          { "Metric": "Sessions Taught", "Value": semesterData.kpis.sessionsTaught, "Unit": "คาบ" },
+        ]);
+        utils.book_append_sheet(wb, ws_sem_kpi, "Semester KPIs");
 
-        // 3. Sheet 2: By Day
-        const byDayExport = data.byDayData.labels.map((label, index) => ({
-          "Day": label,
-          "Attendance": data.byDayData.datasets[0].data[index]
+        // Sheet 2: Semester Trend
+        const sem_trend_data = semesterData.trendGraph.labels.map((label, index) => ({
+          "Week": label,
+          "Attendance (%)": semesterData.trendGraph.datasets[0].data[index]
         }));
-        const ws_byDay = utils.json_to_sheet(byDayExport);
-        utils.book_append_sheet(wb, ws_byDay, "Attendance by Day");
-
-        // 4. Sheet 3: By Time
-        const byTimeExport = data.byTimeData.labels.map((label, index) => ({
-          "Time Slot": label,
-          "Attendance": data.byTimeData.datasets[0].data[index]
-        }));
-        const ws_byTime = utils.json_to_sheet(byTimeExport);
-        utils.book_append_sheet(wb, ws_byTime, "Attendance by Time");
-
-        // 5. Sheet 4: By Course
-        const byCourseExport = data.byCourseData.labels.map((label, index) => ({
-          "Course / Subject": label,
-          "Attendance": data.byCourseData.datasets[0].data[index]
-        }));
-        const ws_byCourse = utils.json_to_sheet(byCourseExport);
-        utils.book_append_sheet(wb, ws_byCourse, "Attendance by Course");
+        const ws_sem_trend = utils.json_to_sheet(sem_trend_data);
+        utils.book_append_sheet(wb, ws_sem_trend, "Semester Trend");
         
-        // 6. บันทึกไฟล์
-        writeFile(wb, "Dashboard_Summary_Report.xlsx");
+        // Sheet 3: Students at Risk
+        const ws_sem_risk = utils.json_to_sheet(semesterData.studentsAtRisk);
+        utils.book_append_sheet(wb, ws_sem_risk, "Students at Risk");
+
+        // Sheet 4: Session KPIs (for selected date)
+        const ws_ses_kpi = utils.json_to_sheet([
+          { "Metric": "Date", "Value": selectedDate },
+          { "Metric": "Present", "Value": sessionData.kpis.present },
+          { "Metric": "Absent", "Value": sessionData.kpis.absent },
+          { "Metric": "Late", "Value": sessionData.kpis.late },
+          { "Metric": "Total", "Value": sessionData.kpis.total },
+        ]);
+        utils.book_append_sheet(wb, ws_ses_kpi, "Session KPIs");
+
+        // Sheet 5: Session Arrival
+        const ses_arrival_data = sessionData.arrivalHistogram.labels.map((label, index) => ({
+          "Time": label,
+          "Student Count": sessionData.arrivalHistogram.datasets[0].data[index]
+        }));
+        const ws_ses_arrival = utils.json_to_sheet(ses_arrival_data);
+        utils.book_append_sheet(wb, ws_ses_arrival, "Session Arrival");
+        
+        // Sheet 6: Session Live Table
+        const ws_ses_live = utils.json_to_sheet(sessionData.liveDataTable);
+        utils.book_append_sheet(wb, ws_ses_live, "Session Live Table");
+
+        // บันทึกไฟล์
+        writeFile(wb, `Faculty_Summary_${selectedSubject}_${selectedDate}.xlsx`);
 
       } catch (err) {
         console.error("Failed to create summary export:", err);
@@ -283,32 +420,21 @@ const DashboardPage = () => {
 
 
   // --- Render ---
-  if (isLoading) {
-    return <div className={styles.pageContainer}><p>Loading dashboard data...</p></div>;
-  }
-  
-  if (!data || data.totalAttendance === 0) {
-     return (
-      <div className={styles.pageContainer}>
-        <div className={styles.header}><h1 className={styles.pageTitle}>Dashboard Preview</h1></div>
-        <p>No attendance data found to display.</p>
-      </div>
-    );
-  }
-
   return (
-    // 4. ย้าย Ref ออกจาก Container หลัก
     <div className={styles.pageContainer}>
+      
+      {/* Overlay ตอนกำลัง Export */}
       {isExporting && (
         <div className={styles.exportLoadingOverlay}>
           <Loader2 className={styles.spinner} />
           <p>Generating Report...</p>
         </div>
       )}
-
+      
+      {/* Header (Title + Export Button) */}
       <div className={styles.header}>
-        <h1 className={styles.pageTitle}>Dashboard Preview</h1>
-        
+        <h1 className={styles.pageTitle}>Faculty Dashboard</h1>
+
         <div className={styles.exportControls}>
           <div style={{ position: 'relative' }}>
             <button 
@@ -322,7 +448,6 @@ const DashboardPage = () => {
             
             {showExportMenu && (
               <div className={styles.exportMenu}>
-                {/* 5. แก้ไขเมนู Dropdown ให้ชัดเจน */}
                 <button onClick={() => handleExport('pdf')}>Export Visual as .pdf</button>
                 <button onClick={() => handleExport('png')}>Export Visual as .png</button>
                 <hr className={styles.menuSeparator} />
@@ -334,35 +459,120 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* 6. เพิ่ม Ref ที่นี่ (หุ้มเฉพาะเนื้อหา) */}
-      <div ref={dashboardContentRef}>
-        {/* --- Stat Cards --- */}
-        <div className={styles.statsGrid}>
-          <StatCard title="Total Attendance (All Time)" value={`${data.totalAttendance} ครั้ง`} icon={<BarChart size={24} />} />
-          <StatCard title="Average Attendance per Day" value={`${data.avgPerDay} ครั้ง/วัน`} icon={<Clock size={24} />} />
-          <StatCard title="Unique Students Attended" value={`${data.uniqueStudents} คน`} icon={<Users size={24} />} />
-          <StatCard title="Average Attendance per Student" value={`${data.avgPerStudent} ครั้ง`} icon={<PieChart size={24} />} />
-        </div>
 
-        {/* --- Charts Grid --- */}
-        <div className={styles.chartsGrid}>
-          <ChartContainer title="Attendance by Day">
-            <Bar data={data.byDayData} options={{ responsive: true, maintainAspectRatio: false }} />
-          </ChartContainer>
-          <ChartContainer title="Trend Attendance">
-            <Line data={data.trendData} options={{ responsive: true, maintainAspectRatio: false }} />
-          </ChartContainer>
-          <ChartContainer title="Attendance by Time of Day">
-            <Bar data={data.byTimeData} options={{ responsive: true, maintainAspectRatio: false }} />
-          </ChartContainer>
-          <ChartContainer title="Attendance by Course/Class">
-            <Pie data={data.byCourseData} options={{ responsive: true, maintainAspectRatio: false }} />
-          </ChartContainer>
+      {/* === 1. ส่วนควบคุมหลัก (Global Filters) === */}
+      <div className={styles.filtersContainer}>
+        <div className={styles.filterGroup}>
+          <label htmlFor="subject-select">
+            <ChevronDown size={16} /> วิชา (Subject):
+          </label>
+          <select 
+            id="subject-select" 
+            value={selectedSubject} 
+            onChange={(e) => setSelectedSubject(e.target.value)}
+          >
+            {subjects.map(subject => (
+              <option key={subject.id} value={subject.id}>{subject.name}</option>
+            ))}
+          </select>
         </div>
-      </div> {/* (สิ้นสุด div ของ dashboardContentRef) */}
-      
+        <div className={styles.filterGroup}>
+          <label htmlFor="date-picker">
+            <Calendar size={16} /> วันที่ (Date):
+          </label>
+          <input 
+            type="date" 
+            id="date-picker"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* === เนื้อหา Dashboard (สำหรับ Export) === */}
+      <div ref={contentAreaRef}>
+        <hr className={styles.sectionSeparator} />
+
+        {/* === 2. (Mockup แท็บ 1) ภาพรวมวิชา (Semester Overview) === */}
+        <section>
+          <h2 className={styles.sectionTitle}>ภาพรวมวิชา (Semester Overview)</h2>
+          {isSemesterLoading ? (
+            <div className={styles.loadingBox}><Loader2 className={styles.spinner} /> Loading...</div>
+          ) : !semesterData ? (
+            <p>No data available for this semester.</p>
+          ) : (
+            <>
+              {/* 1A. KPI สรุปทั้งเทอม */}
+              <div className={styles.statsGrid}>
+                <StatCard title="นักเรียนทั้งหมด (Total Roster)" value={`${semesterData.kpis.totalRoster} คน`} icon={<Users size={24} />} />
+                <StatCard title="อัตราเข้าเรียนเฉลี่ย (Avg. Attendance)" value={`${semesterData.kpis.avgAttendance}%`} icon={<BarChart size={24} />} />
+                <StatCard title="อัตรามาสายเฉลี่ย (Avg. Lateness)" value={`${semesterData.kpis.avgLateness}%`} icon={<Clock size={24} />} />
+                <StatCard title="จำนวนคาบที่สอนแล้ว (Sessions Taught)" value={`${semesterData.kpis.sessionsTaught} คาบ`} icon={<TrendingUp size={24} />} />
+              </div>
+
+              {/* 1B. กราฟแนวโน้ม */}
+              <ChartContainer title="แนวโน้มการเข้าเรียน (Attendance Trend Over Semester)" className={styles.fullWidthContainer}>
+                <Line data={semesterData.trendGraph} options={{ responsive: true, maintainAspectRatio: false }} />
+              </ChartContainer>
+
+              {/* 1C. ตารางนักศึกษาที่ต้องติดตาม */}
+              <ChartContainer title="นักศึกษาที่ขาด/สาย บ่อยที่สุด (Top 5)" className={styles.fullWidthContainer}>
+                <StudentsAtRiskTable data={semesterData.studentsAtRisk} />
+              </ChartContainer>
+            </>
+          )}
+        </section>
+
+        <hr className={styles.sectionSeparator} />
+
+        {/* === 3. (Mockup แท็บ 2) สรุปรายคาบ (Session-Specific View) === */}
+        <section>
+          <h2 className={styles.sectionTitle}>สรุปรายคาบ (Session-Specific View)</h2>
+          <p className={styles.sectionSubtitle}>ข้อมูลสำหรับวันที่: {new Date(selectedDate).toLocaleDateString('th-TH', { dateStyle: 'long' })}</p>
+          
+          {isSessionLoading ? (
+            <div className={styles.loadingBox}><Loader2 className={styles.spinner} /> Loading...</div>
+          ) : !sessionData ? (
+            <p>No data available for this session.</p>
+          ) : (
+            <>
+              {/* 2A. KPI สรุปประจำคาบ */}
+              <div className={styles.statsGrid} style={{gridTemplateColumns: 'repeat(3, 1fr)'}}>
+                <StatCard title="เข้าเรียน (Present)" value={`${sessionData.kpis.present} / ${sessionData.kpis.total} คน`} icon={<CheckCircle size={24} />} />
+                <StatCard title="ขาดเรียน (Absent)" value={`${sessionData.kpis.absent} คน`} icon={<XCircle size={24} />} />
+                <StatCard title="มาสาย (Late)" value={`${sessionData.kpis.late} คน`} icon={<AlertTriangle size={24} />} />
+              </div>
+
+              {/* 2B. กราฟสรุป (Donut) & 2C. กราฟกระจายเวลา (Histogram) */}
+              <div className={styles.chartsGrid}>
+                <ChartContainer title={`สรุปการเข้าเรียน (${new Date(selectedDate).toLocaleDateString('th-TH')})`}>
+                  <Pie data={sessionData.summaryDonut} options={{ responsive: true, maintainAspectRatio: false, cutout: '50%' }} />
+                </ChartContainer>
+                <ChartContainer title="นักเรียนเข้าห้องตอนไหน (Arrival Time Distribution)">
+                  <Bar data={sessionData.arrivalHistogram} options={{ responsive: true, maintainAspectRatio: false }} />
+                </ChartContainer>
+              </div>
+
+              {/* 2D. ตารางข้อมูลสด */}
+              <ChartContainer title={`รายชื่อการเข้าเรียน (${new Date(selectedDate).toLocaleDateString('th-TH')})`} className={styles.fullWidthContainer}>
+                <LiveSessionTable data={sessionData.liveDataTable} />
+              </ChartContainer>
+            </>
+          )}
+        </section>
+        
+        <hr className={styles.sectionSeparator} />
+
+        {/* === 4. (Mockup แท็บ 3) วิเคราะห์พฤติกรรม (Behavioral Analysis) === */}
+        {/* (TODO: ส่วนนี้มีความซับซ้อนสูง (Student Filter, Heatmap, CSV Upload) จะต้องทำใน Step ถัดไป) */}
+        <section>
+          <h2 className={styles.sectionTitle}>วิเคราะห์พฤติกรรม (Behavioral Analysis)</h2>
+          <p><i>(ส่วนของ Student Deep Dive และ Correlation Plot จะถูกพัฒนาในส่วนถัดไป)</i></p>
+        </section>
+      </div> {/* (สิ้นสุด contentAreaRef) */}
+
     </div>
   );
 };
 
-export default DashboardPage;
+export default FacultyDashboardPage;

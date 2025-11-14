@@ -1,22 +1,225 @@
-/* app/(main)/dashboard/dashboard.module.css */
-
 .pageContainer {
     padding: 2rem;
     background-color: #fff;
     position: relative; 
 }
 
+/* --- Header (Title + Export Button) --- */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .pageTitle {
     font-size: 1.875rem; /* text-3xl */
     font-weight: 700;
     color: #1e293b; /* text-slate-800 */
+}
+
+/* --- Filters Container --- */
+.filtersContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 1rem;
+    background-color: #f8fafc; /* slate-50 */
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 2rem;
+}
+.filterGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.filterGroup label {
+    font-weight: 600;
+    color: #334155; /* slate-700 */
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.filterGroup select,
+.filterGroup input[type="date"] {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #cbd5e1; /* slate-300 */
+    border-radius: 0.5rem;
+    background-color: #fff;
+    font-size: 0.875rem;
+    color: #000000; /* ⭐️ [นี่คือบรรทัดที่เพิ่มเข้ามา] ⭐️ */
+}
+
+/* --- Section Styles --- */
+.sectionSeparator {
+    border-top: 1px solid #e2e8f0;
+    margin: 2.5rem 0;
+}
+.sectionTitle {
+    font-size: 1.5rem; /* text-2xl */
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+}
+.sectionSubtitle {
+    font-size: 1rem;
+    color: #64748b;
+    margin-top: -1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* --- Stat Cards Grid --- */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.statCard {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0; /* slate-200 */
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.03), 0 2px 4px -2px rgb(0 0 0 / 0.03);
+}
+.statIcon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.statContent { display: flex; flex-direction: column; }
+.statTitle { font-size: 0.875rem; color: #64748b; font-weight: 500; }
+.statValue { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+
+/* (สี Icon สำหรับ Semester KPI) */
+.statCard:nth-child(1) .statIcon { background-color: #eef2ff; color: #4f46e5; } /* Indigo */
+.statCard:nth-child(2) .statIcon { background-color: #f0fdf4; color: #22c55e; } /* Green */
+.statCard:nth-child(3) .statIcon { background-color: #fffbeb; color: #f59e0b; } /* Amber */
+.statCard:nth-child(4) .statIcon { background-color: #f0f9ff; color: #0ea5e9; } /* Sky */
+
+/* (สี Icon สำหรับ Session KPI) */
+section:nth-of-type(2) .statCard:nth-child(1) .statIcon { background-color: #f0fdf4; color: #22c55e; } /* Green */
+section:nth-of-type(2) .statCard:nth-child(2) .statIcon { background-color: #fef2f2; color: #ef4444; } /* Red */
+section:nth-of-type(2) .statCard:nth-child(3) .statIcon { background-color: #fffbeb; color: #f59e0b; } /* Amber */
+
+
+/* --- Charts Grid --- */
+.chartsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Container แบบเต็มความกว้าง */
+.fullWidthContainer {
+    grid-column: 1 / -1; /* (ให้เต็มแถว) */
+    margin-bottom: 1.5rem;
+}
+
+.chartContainer {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.03), 0 2px 4px -2px rgb(0 0 0 / 0.03);
+}
+.chartTitle {
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+}
+.chartContent {
+    height: 350px;
+    position: relative;
+}
+
+/* --- Table Styles --- */
+.tableContainer {
+    width: 100%;
+    overflow-x: auto;
+    /* (ปรับ height ให้สัมพันธ์กับ ChartContainer) */
+    height: 350px;
+    overflow-y: auto;
+}
+.dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+.dataTable th, .dataTable td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0; /* slate-200 */
+}
+.dataTable th {
+    background-color: #f8fafc; /* slate-50 */
+    font-weight: 600;
+    color: #334155; /* slate-700 */
+}
+.dataTable tbody tr:hover {
+    background-color: #f9fafb; /* gray-50 */
+}
+
+/* --- Status Badge Styles --- */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+.statusBadge.present {
+  background-color: #f0fdf4; /* green-50 */
+  color: #166534; /* green-800 */
+}
+.statusBadge.late {
+  background-color: #fffbeb; /* amber-50 */
+  color: #92400e; /* amber-800 */
+}
+.statusBadge.absent {
+  background-color: #fef2f2; /* red-50 */
+  color: #991b1b; /* red-800 */
+}
+
+
+/* --- Loading Styles --- */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+.loadingBox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-weight: 500;
+    padding: 3rem;
+    border: 1px dashed #e2e8f0;
+    border-radius: 0.75rem;
+}
+
+/* --- CSS สำหรับ Export Button, Menu, และ Overlay --- */
+
+.exportControls {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .exportButton {
@@ -41,103 +244,6 @@
     background-color: #f1f5f9;
     color: #9ca3af;
     cursor: not-allowed;
-}
-
-
-/* --- Stat Cards Grid --- */
-.statsGrid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.statCard {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    background-color: #fff;
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    border: 1px solid #e2e8f0; /* slate-200 */
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.03), 0 2px 4px -2px rgb(0 0 0 / 0.03);
-}
-
-.statIcon {
-    flex-shrink: 0;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f3f4f6; /* gray-100 */
-    color: #4b5563; /* gray-600 */
-}
-.statCard:nth-child(1) .statIcon { background-color: #eef2ff; color: #4f46e5; } /* Indigo */
-.statCard:nth-child(2) .statIcon { background-color: #f0fdf4; color: #22c55e; } /* Green */
-.statCard:nth-child(3) .statIcon { background-color: #fefce8; color: #eab308; } /* Yellow */
-.statCard:nth-child(4) .statIcon { background-color: #fef2f2; color: #ef4444; } /* Red */
-
-
-.statContent {
-    display: flex;
-    flex-direction: column;
-}
-
-.statTitle {
-    font-size: 0.875rem; /* text-sm */
-    color: #64748b; /* slate-500 */
-    font-weight: 500;
-}
-
-.statValue {
-    font-size: 1.5rem; /* text-2xl */
-    font-weight: 700;
-    color: #1e293b; /* slate-800 */
-}
-
-/* --- Charts Grid --- */
-.chartsGrid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-.chartsGrid > *:nth-child(3),
-.chartsGrid > *:nth-child(4) {
-    grid-column: span 1 / span 1;
-}
-.chartsGrid {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-.chartContainer {
-    background-color: #fff;
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.03), 0 2px 4px -2px rgb(0 0 0 / 0.03);
-}
-
-.chartTitle {
-    font-size: 1.125rem; /* text-lg */
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 1.5rem;
-}
-
-.chartContent {
-    height: 350px;
-    position: relative;
-}
-
-/* --- (โค้ดสำหรับ Dropdown & Loading) --- */
-
-.exportControls {
-  position: relative;
-  display: flex;
-  align-items: center;
 }
 
 .exportMenu {
@@ -177,17 +283,9 @@
   margin: 4px 0;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.spinner {
-  animation: spin 1s linear infinite;
-}
-
 .exportLoadingOverlay {
-  position: absolute;
-  inset: 0;
+  position: absolute; 
+  inset: 0; 
   background-color: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(4px);
   display: flex;
@@ -199,4 +297,9 @@
   font-weight: 600;
   font-size: 1.125rem;
   gap: 1rem;
+}
+
+/* --- (โค้ดบังคับสีดำจากครั้งที่แล้ว) --- */
+.statTitle, .statValue, .sectionTitle, .chartTitle, .dataTable th, .dataTable td {
+    color: #000000 !important;
 }
