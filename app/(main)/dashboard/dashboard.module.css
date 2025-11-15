@@ -48,8 +48,19 @@
     border-radius: 0.5rem;
     background-color: #fff;
     font-size: 0.875rem;
-    color: #000000; /* ⭐️ [นี่คือบรรทัดที่เพิ่มเข้ามา] ⭐️ */
+    color: #000000;
 }
+
+/* --- [ ⭐️⭐️⭐️ เพิ่ม ⭐️⭐️⭐️ ] --- */
+/* (สไตล์สำหรับแถบ Filter ที่ย้ายมาใหม่) */
+.semesterFilters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem; /* (เว้นระยะก่อนถึง KPI) */
+}
+/* --------------------------------- */
+
 
 /* --- Section Styles --- */
 .sectionSeparator {
@@ -99,16 +110,18 @@
 .statTitle { font-size: 0.875rem; color: #64748b; font-weight: 500; }
 .statValue { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
 
-/* (สี Icon สำหรับ Semester KPI) */
-.statCard:nth-child(1) .statIcon { background-color: #eef2ff; color: #4f46e5; } /* Indigo */
-.statCard:nth-child(2) .statIcon { background-color: #f0fdf4; color: #22c55e; } /* Green */
-.statCard:nth-child(3) .statIcon { background-color: #fffbeb; color: #f59e0b; } /* Amber */
-.statCard:nth-child(4) .statIcon { background-color: #f0f9ff; color: #0ea5e9; } /* Sky */
 
-/* (สี Icon สำหรับ Session KPI) */
-section:nth-of-type(2) .statCard:nth-child(1) .statIcon { background-color: #f0fdf4; color: #22c55e; } /* Green */
-section:nth-of-type(2) .statCard:nth-child(2) .statIcon { background-color: #fef2f2; color: #ef4444; } /* Red */
-section:nth-of-type(2) .statCard:nth-child(3) .statIcon { background-color: #fffbeb; color: #f59e0b; } /* Amber */
+/* --- [ ⭐️⭐️⭐️ แก้ไข ⭐️⭐️⭐️ ] --- */
+/* (แก้ไขสี Icon ให้ตรงตามโจทย์) */
+.kpiIconRoster { background-color: #e0f2fe; color: #0284c7; } /* ฟ้า/น้ำเงิน */
+.kpiIconAvgAttendance { background-color: #f0fdf4; color: #22c55e; } /* เขียว */
+.kpiIconAvgLateness { background-color: #fffbeb; color: #f59e0b; } /* เหลือง/ส้ม */
+.kpiIconSessions { background-color: #eef2ff; color: #4f46e5; } /* ม่วง/คราม */
+
+.kpiIconPresent { background-color: #f0fdf4; color: #22c55e; } /* เขียว */
+.kpiIconAbsent { background-color: #fef2f2; color: #ef4444; } /* แดง */
+.kpiIconLate { background-color: #fffbeb; color: #f59e0b; } /* เหลือง/ส้ม */
+/* --- [ ⭐️⭐️⭐️ สิ้นสุด ⭐️⭐️⭐️ ] --- */
 
 
 /* --- Charts Grid --- */
@@ -121,7 +134,7 @@ section:nth-of-type(2) .statCard:nth-child(3) .statIcon { background-color: #fff
 
 /* Container แบบเต็มความกว้าง */
 .fullWidthContainer {
-    grid-column: 1 / -1; /* (ให้เต็มแถว) */
+    grid-column: 1 / -1; 
     margin-bottom: 1.5rem;
 }
 
@@ -147,7 +160,6 @@ section:nth-of-type(2) .statCard:nth-child(3) .statIcon { background-color: #fff
 .tableContainer {
     width: 100%;
     overflow-x: auto;
-    /* (ปรับ height ให้สัมพันธ์กับ ChartContainer) */
     height: 350px;
     overflow-y: auto;
 }
@@ -299,7 +311,7 @@ section:nth-of-type(2) .statCard:nth-child(3) .statIcon { background-color: #fff
   gap: 1rem;
 }
 
-/* --- (โค้ดบังคับสีดำจากครั้งที่แล้ว) --- */
+/* (โค้ดบังคับสีดำจากครั้งที่แล้ว) */
 .statTitle, .statValue, .sectionTitle, .chartTitle, .dataTable th, .dataTable td {
     color: #000000 !important;
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback, FormEvent } from 'react';
-// ⭐️ [ 1. แก้ไข ] เพิ่มไอคอน Save
 import { Settings, Download, X, VideoOff, Plus, Loader2, Save, Trash2, Users } from 'lucide-react'; 
 import styles from './accesscontrol.module.css';
 
@@ -46,34 +45,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSelect
 };
 
 // --- (AddSubjectModal Component - เหมือนเดิม) ---
-// ⭐️ [ 2. แก้ไข ] เพิ่ม class_start_time ตอนสร้าง
-interface AddSubjectModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubjectAdded: () => void;
-}
+interface AddSubjectModalProps { isOpen: boolean; onClose: () => void; onSubjectAdded: () => void; }
 const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSubjectAdded }) => {
   const [subjectName, setSubjectName] = useState('');
   const [section, setSection] = useState('');
   const [schedule, setSchedule] = useState('');
   const [academicYear, setAcademicYear] = useState('');
-  const [classStartTime, setClassStartTime] = useState('09:00'); // ⭐️ เพิ่ม
+  const [classStartTime, setClassStartTime] = useState('09:00'); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-
   useEffect(() => {
     if (isOpen) {
       setSubjectName(''); setSection(''); setSchedule(''); setError('');
-      setAcademicYear(''); setClassStartTime('09:00'); // ⭐️ เพิ่ม
+      setAcademicYear(''); setClassStartTime('09:00'); 
     }
   }, [isOpen]);
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     if (!subjectName.trim()) { setError('Subject Name is required'); return; }
     if (!academicYear.trim()) { setError('Academic Year is required'); return; } 
-
     setIsSubmitting(true);
     try {
       const res = await fetch(`${BACKEND_URL}/subjects`, {
@@ -84,24 +75,19 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSu
           section: section || null,
           schedule: schedule || null,
           academic_year: academicYear || null,
-          class_start_time: classStartTime || null, // ⭐️ เพิ่ม
+          class_start_time: classStartTime || null, 
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || 'Failed to create subject');
-      }
+      if (!res.ok) { const data = await res.json(); throw new Error(data.detail || 'Failed to create subject'); }
       onSubjectAdded();
       onClose();
     } catch (err: any) { setError(err.message); } 
     finally { setIsSubmitting(false); }
   };
-  
   const handleSectionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (/^\d*$/.test(value)) { setSection(value); }
   };
-  
   if (!isOpen) return null;
   return (
     <div className={styles.modalBackdrop} onClick={onClose} style={{ zIndex: 1100 }}>
@@ -121,7 +107,6 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSu
              <label htmlFor="section">Section (Optional)</label>
              <input id="section" type="text" inputMode="numeric" value={section} onChange={handleSectionChange} placeholder="e.g. 1" disabled={isSubmitting} />
           </div>
-          {/* ⭐️ เพิ่มช่อง Class Start Time */}
           <div className={styles.formGroup}>
              <label htmlFor="classStartTime">Class Start Time (Optional)</label>
              <input id="classStartTime" type="time" value={classStartTime} onChange={e => setClassStartTime(e.target.value)} disabled={isSubmitting} />
@@ -141,25 +126,20 @@ const AddSubjectModal: React.FC<AddSubjectModalProps> = ({ isOpen, onClose, onSu
 };
 
 
-// --- (DeleteSubjectModal Component - เหมือนเดิม) ---
+// (DeleteSubjectModal Component - เหมือนเดิม)
 interface Subject {
   subject_id: number;
   subject_name: string;
   section?: string | null;
   schedule?: string | null;
   academic_year?: string | null; 
-  class_start_time?: string | null; // ⭐️ เพิ่ม
+  class_start_time?: string | null; 
 }
-interface DeleteSubjectModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubjectDeleted: () => void;
-}
+interface DeleteSubjectModalProps { isOpen: boolean; onClose: () => void; onSubjectDeleted: () => void; }
 export const DeleteSubjectModal: React.FC<DeleteSubjectModalProps> = ({ isOpen, onClose, onSubjectDeleted }) => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState('');
-
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
@@ -170,19 +150,15 @@ export const DeleteSubjectModal: React.FC<DeleteSubjectModalProps> = ({ isOpen, 
       } catch (err: any) { setError(err.message); }
     };
     if (isOpen) { fetchSubjects(); }
-  }, [isOpen, onSubjectDeleted]); // ⭐️ เพิ่ม onSubjectDeleted dependency
-
+  }, [isOpen, onSubjectDeleted]); 
   const handleDelete = async (subjectId: number, subjectName: string) => {
     if (!window.confirm(`Are you sure you want to delete "${subjectName}"?`)) { return; }
     setDeletingId(subjectId);
     setError('');
     try {
       const res = await fetch(`${BACKEND_URL}/subjects/${subjectId}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || 'Failed to delete');
-      }
-      onSubjectDeleted(); // (เรียกฟังก์ชันแม่)
+      if (!res.ok) { const data = await res.json(); throw new Error(data.detail || 'Failed to delete'); }
+      onSubjectDeleted(); 
       setSubjects(prev => prev.filter(s => s.subject_id !== subjectId));
     } catch (err: any) { setError(err.message); } 
     finally { setDeletingId(null); }
@@ -216,7 +192,7 @@ export const DeleteSubjectModal: React.FC<DeleteSubjectModalProps> = ({ isOpen, 
 };
 
 
-// --- (SnapshotModal Component - เหมือนเดิม) ---
+// (SnapshotModal Component - เหมือนเดิม)
 interface SnapshotModalProps { isOpen: boolean; onClose: () => void; imageUrl: string | null; }
 const SnapshotModal: React.FC<SnapshotModalProps> = ({ isOpen, onClose, imageUrl }) => {
   if (!isOpen || !imageUrl) return null;
@@ -230,7 +206,7 @@ const SnapshotModal: React.FC<SnapshotModalProps> = ({ isOpen, onClose, imageUrl
   );
 };
 
-// --- (useAIResults Hook - เหมือนเดิม) ---
+// (useAIResults Hook - เหมือนเดิม)
 interface AIResult { name: string; box: [number, number, number, number]; similarity?: number | null; matched: boolean; display_name: string; }
 interface AIData { results: AIResult[]; ai_width: number; ai_height: number; }
 const useAIResults = (camId: string, streamKey: string) => {
@@ -253,7 +229,7 @@ const useAIResults = (camId: string, streamKey: string) => {
   return data;
 };
 
-// --- (CameraBox Component - เหมือนเดิม) ---
+// (CameraBox Component - เหมือนเดิม)
 interface CameraBoxProps { camId: 'entrance' | 'exit'; streamKey: string; onSettingsClick: () => void; }
 const CameraBox: React.FC<CameraBoxProps> = ({ camId, streamKey, onSettingsClick }) => {
   const [error, setError] = useState(false);
@@ -289,11 +265,13 @@ const CameraBox: React.FC<CameraBoxProps> = ({ camId, streamKey, onSettingsClick
   );
 };
 
-// --- (Interfaces) ---
+// --- [ ⭐️⭐️⭐️ 3. แก้ไข Interface นี้ ⭐️⭐️⭐️ ] ---
 interface LogEntry { 
   log_id: number; user_id: number; user_name: string; student_code: string; 
-  action: "enter" | "exit"; timestamp: string; confidence: number | null; 
+  action: "enter" | "exit"; 
+  timestamp: string; confidence: number | null; 
   subject_id: number | null; snapshot_path: string | null;
+  log_status: "Present" | "Late" | null; // ( ⭐️ เพิ่ม field นี้ )
 }
 // (Subject interface ย้ายไปข้างบนแล้ว)
 
@@ -306,18 +284,16 @@ const AccessControlPage = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [lateTime, setLateTime] = useState('09:30'); // (นี่คือ State ที่เราจะซิงค์)
+  const [lateTime, setLateTime] = useState('09:30'); 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const isViewingToday = selectedDate.toDateString() === new Date().toDateString();
   const [isAddSubjectModalOpen, setIsAddSubjectModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [subjects, setSubjects] = useState<Subject[]>([]); // (นี่คือ State ที่เก็บข้อมูลวิชา)
+  const [subjects, setSubjects] = useState<Subject[]>([]); 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [snapshotModalUrl, setSnapshotModalUrl] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState({ checked: 0, total: 0 });
-  
-  // ⭐️ [ 3. แก้ไข ] เพิ่ม State สำหรับปุ่ม Save
   const [isSavingTime, setIsSavingTime] = useState(false);
 
   const formatDateForAPI = (date: Date): string => { return date.toISOString().split('T')[0]; };
@@ -328,18 +304,24 @@ const AccessControlPage = () => {
       if (!response.ok) throw new Error("Failed to fetch subjects");
       const data: Subject[] = await response.json();
       setSubjects(data);
-      // ⭐️ [ 4. แก้ไข ] (โหลดเวลาใหม่)
-      // ถ้ามีการเลือกวิชาอยู่แล้ว ให้โหลดเวลาของวิชานั้น
-      if(selectedSubjectId) {
-        const currentSubj = data.find(s => s.subject_id.toString() === selectedSubjectId);
+      
+      let currentSubjId = selectedSubjectId;
+      // ( ⭐️ เพิ่ม ) ถ้ายังไม่มีวิชาที่เลือก ให้เลือกอันแรก
+      if (!currentSubjId && data.length > 0) {
+        currentSubjId = data[0].subject_id.toString();
+        setSelectedSubjectId(currentSubjId); // (ตั้งค่า state ด้วย)
+      }
+
+      if(currentSubjId) {
+        const currentSubj = data.find(s => s.subject_id.toString() === currentSubjId);
         if (currentSubj && currentSubj.class_start_time) {
-            setLateTime(currentSubj.class_start_time.substring(0, 5)); // (HH:MM:SS -> HH:MM)
+            setLateTime(currentSubj.class_start_time.substring(0, 5)); 
         } else {
-            setLateTime('09:30'); // (ค่าเริ่มต้นถ้าไม่มีเวลา)
+            setLateTime('09:30'); 
         }
       }
     } catch (err) { console.error("Failed to fetch subjects:", err); }
-  }, [selectedSubjectId]); // ⭐️ เพิ่ม selectedSubjectId
+  }, [selectedSubjectId]); 
 
   const fetchInitialLogs = useCallback(async () => {
     const dateString = formatDateForAPI(selectedDate);
@@ -400,28 +382,16 @@ const AccessControlPage = () => {
   useEffect(() => { fetchSubjects(); }, [fetchSubjects]);
   useEffect(() => { const timer = setInterval(() => { setCurrentTime(new Date()); }, 1000); return () => { clearInterval(timer); }; }, []);
 
-  // ⭐️ [ 5. แก้ไข ] ฟังก์ชันนี้
   const handleSubjectChange = async (newSubjectId: string) => {
-    // 1. อัปเดต State ของ React (เพื่อกรอง Log)
     setSelectedSubjectId(newSubjectId);
-
-    // 2. (โหลดเวลา) หาเวลาของวิชาที่เลือก
     const selectedSubj = subjects.find(s => s.subject_id.toString() === newSubjectId);
     if (selectedSubj && selectedSubj.class_start_time) {
-      // (ได้เวลาจาก DB)
-      setLateTime(selectedSubj.class_start_time.substring(0, 5)); // (HH:MM:SS -> HH:MM)
+      setLateTime(selectedSubj.class_start_time.substring(0, 5)); 
     } else {
-      // (วิชา "All Subjects" หรือ วิชานี้ไม่มีเวลา)
-      setLateTime('09:30'); // (ตั้งเป็นค่าเริ่มต้น)
+      setLateTime('09:30'); 
     }
-    
-    // 3. แปลงค่า
     const subjectIdAsInt = newSubjectId ? parseInt(newSubjectId, 10) : null;
-    
-    // 4. Reset ตัวนับ
     setStudentCount({ checked: 0, total: 0 });
-
-    // 5. (Backend) บอก AI ว่าจะเช็ควิชาไหน
     try {
       const res = await fetch(`${BACKEND_URL}/attendance/set_active_subject`, {
         method: 'POST',
@@ -434,8 +404,6 @@ const AccessControlPage = () => {
     } catch (err) {
       console.error("Failed to set active subject:", err);
     }
-    
-    // 6. (Backend) ถ้าเลือกวิชา ให้ไปดึงจำนวนนักเรียน "ทั้งหมด"
     if (subjectIdAsInt) {
       try {
         const res = await fetch(`${BACKEND_URL}/subjects/${subjectIdAsInt}/student_count`);
@@ -448,32 +416,18 @@ const AccessControlPage = () => {
     }
   };
 
-  // ⭐️ [ 6. เพิ่ม ] ฟังก์ชันใหม่สำหรับปุ่ม Save
   const handleSaveTime = async () => {
-    if (!selectedSubjectId) {
-        alert("Please select a subject first.");
-        return;
-    }
-    if (!lateTime) {
-        alert("Please enter a valid time.");
-        return;
-    }
-
+    if (!selectedSubjectId) { alert("Please select a subject first."); return; }
+    if (!lateTime) { alert("Please enter a valid time."); return; }
     setIsSavingTime(true);
     try {
         const res = await fetch(`${BACKEND_URL}/api/subjects/${selectedSubjectId}/time`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                class_start_time: lateTime // (ส่งเวลาในรูปแบบ HH:MM)
-            }),
+            body: JSON.stringify({ class_start_time: lateTime }),
         });
-        if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.detail || 'Failed to save time');
-        }
+        if (!res.ok) { const data = await res.json(); throw new Error(data.detail || 'Failed to save time'); }
         alert("Class start time updated successfully!");
-        // (สั่งโหลดข้อมูลวิชาใหม่ เพื่อให้แน่ใจว่าข้อมูลตรงกัน)
         fetchSubjects();
     } catch (err: any) {
         console.error("Failed to save time:", err);
@@ -497,7 +451,6 @@ const AccessControlPage = () => {
     }
   };
   
-  // (ฟังก์ชัน Handle อื่นๆ - เหมือนเดิม)
   const handleStartAttendance = async () => { try { await fetch(`${BACKEND_URL}/attendance/start`, { method: 'POST' }); alert('Attendance Started!'); } catch (err) { console.error(err); alert('Failed to start attendance.'); } };
   const handleStopAttendance = async () => { try { await fetch(`${BACKEND_URL}/attendance/stop`, { method: 'POST' }); alert('Attendance Stopped!'); } catch (err) { console.error(err); alert('Failed to stop attendance.'); } };
   const handleSubjectAdded = () => { alert("Subject created successfully!"); fetchSubjects(); };
@@ -549,7 +502,7 @@ const AccessControlPage = () => {
       
       <div className={styles.controlPanel}>
         <div className={styles.controlGroup}>
-          <label htmlFor="subjectSelect" style={{ whiteSpace: 'nowrap' }}>Class&nbsp;:</label>
+          <label htmlFor="subjectSelect">Class&nbsp;:</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
             
             <select
@@ -585,18 +538,16 @@ const AccessControlPage = () => {
           </div>
         )}
         
-        {/* ⭐️ [ 7. แก้ไข ] เพิ่มปุ่ม Save */}
         <div className={styles.controlGroup}>
-          <label htmlFor="lateTime" style={{ whiteSpace: 'nowrap' }}>After :</label>
+          <label htmlFor="lateTime">After :</label>
           <input 
             type="time" 
             id="lateTime" 
             className={styles.controlInput} 
             value={lateTime} 
-            onChange={(e) => setLateTime(e.target.value)} // (ยังคงอัปเดต State ทันที)
+            onChange={(e) => setLateTime(e.target.value)} 
             style={{ width: '130px' }}
           />
-          {/* (เพิ่มปุ่ม Save) */}
           <button 
             onClick={handleSaveTime} 
             className={styles.iconButton} 
@@ -661,24 +612,21 @@ const AccessControlPage = () => {
                     <td className={styles.tableCellText}>{log.user_name}</td>
                     <td className={styles.tableCellText}>{log.student_code}</td>
                     
+                    {/* [ ⭐️⭐️⭐️ 4. แก้ไข Logic การแสดงผล ⭐️⭐️⭐️ ] */}
                     <td className={styles.tableCellStatus}>
                       {(() => {
+                        // (แสดง "Exit" ก่อน)
                         if (log.action === 'exit') {
                           return <span className={styles.statusExit}>Exit</span>;
                         }
-                        try {
-                          const [lateHour, lateMinute] = lateTime.split(':').map(Number);
-                          const logTime = new Date(log.timestamp);
-                          const isLate = logTime.getHours() > lateHour || 
-                                         (logTime.getHours() === lateHour && logTime.getMinutes() > lateMinute);
-                          if (isLate) {
-                            return <span className={styles.statusLate}>Enter (Late)</span>;
-                          } else {
-                            return <span className={styles.statusPresent}>Enter (On-Time)</span>;
-                          }
-                        } catch (e) {
-                          return <span className={styles.statusPresent}>Enter</span>;
+                        
+                        // (แสดง Status ที่บันทึกไว้จาก DB)
+                        if (log.log_status === 'Late') {
+                          return <span className={styles.statusLate}>Enter (Late)</span>;
                         }
+                        
+                        // (ค่า default คือ On-Time)
+                        return <span className={styles.statusPresent}>Enter (On-Time)</span>;
                       })()}
                     </td>
                     
