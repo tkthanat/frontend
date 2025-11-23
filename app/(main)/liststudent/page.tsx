@@ -18,7 +18,16 @@ interface User {
   name: string;
   student_code: string | null;
   role: string;
-  faces: UserFace[]; 
+  faces: UserFace[];
+  subject_id: number | null;
+}
+
+// ✨ [ 1. แก้ไข ] เพิ่ม academic_year
+interface Subject {
+  subject_id: number;
+  subject_name: string;
+  section?: string | null;
+  academic_year?: string | null; // (เพิ่ม)
 }
 
 // --- Component: StudentCard ---
@@ -34,23 +43,23 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onDelete, onEdit }) 
 
   return (
     <div className={styles.studentCard} onClick={() => onEdit(student)}>
-      <button 
-        className={styles.deleteButton} 
+      <button
+        className={styles.deleteButton}
         onClick={(e) => { e.stopPropagation(); onDelete(student.user_id, student.name); }}
         title="Delete Student"
       >
         <Trash2 size={16} />
       </button>
-      
+
       <div className={styles.imageGrid}>
         {gridFaces.map(face => (
-           <img 
-             key={face.face_id}
-             src={`${BACKEND_URL}/static/faces/train/${student.user_id}/${encodeURIComponent(face.file_path)}`} 
-             alt={student.name} 
-             className={styles.studentImage} 
-             onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.png'; }}
-           />
+          <img
+            key={face.face_id}
+            src={`${BACKEND_URL}/static/faces/train/${student.user_id}/${encodeURIComponent(face.file_path)}`}
+            alt={student.name}
+            className={styles.studentImage}
+            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.png'; }}
+          />
         ))}
         {placeholders.map((_, index) => (
           <div key={`placeholder-${index}`} className={styles.imagePlaceholder}>
@@ -71,12 +80,14 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onDelete, onEdit }) 
 interface AddStudentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onStudentAdded: () => void; 
+  onStudentAdded: () => void;
+  subjects: Subject[];
 }
 
-const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onStudentAdded }) => {
+const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onStudentAdded, subjects }) => {
   const [name, setName] = useState('');
   const [studentCode, setStudentCode] = useState('');
+  const [subjectId, setSubjectId] = useState<string>('');
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,6 +97,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSt
   const resetForm = useCallback(() => {
     setName('');
     setStudentCode('');
+    setSubjectId('');
     setFiles([]);
     setError('');
     setIsSubmitting(false);
@@ -125,12 +137,17 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSt
     if (!studentCode.trim()) { setError('กรุณากรอกรหัสนักศึกษา'); return; }
     if (files.length < 4) { setError('กรุณาอัปโหลดรูปภาพอย่างน้อย 4 รูป'); return; }
     setIsSubmitting(true);
-    
+
     try {
       const userResponse = await fetch(`${BACKEND_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, student_code: studentCode, role: 'viewer' }),
+        body: JSON.stringify({
+          name,
+          student_code: studentCode,
+          role: 'viewer',
+          subject_id: subjectId ? parseInt(subjectId, 10) : null
+        }),
       });
       if (!userResponse.ok) {
         const errData = await userResponse.json();
@@ -140,13 +157,13 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSt
       const uploadFormData = new FormData();
       uploadFormData.append('user_id', newUserResult.user.user_id.toString());
       files.forEach((file) => uploadFormData.append('images', file));
-      
+
       const uploadResponse = await fetch(`${BACKEND_URL}/faces/upload`, {
         method: 'POST',
         body: uploadFormData,
       });
       if (!uploadResponse.ok) throw new Error('Failed to upload images.');
-      
+
       await fetch(`${BACKEND_URL}/train/refresh`, { method: 'POST' });
       onStudentAdded();
       onClose();
@@ -173,6 +190,26 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSt
             <label>Name</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={isSubmitting} />
           </div>
+
+          <div className={styles.formGroup}>
+            <label>Subject (Optional)</label>
+            <select
+              className={styles.controlSelect}
+              value={subjectId}
+              onChange={(e) => setSubjectId(e.target.value)}
+              disabled={isSubmitting}
+            >
+              <option value="">-- Assign to a Subject --</option>
+              {/* ✨ [ 2. แก้ไข ] อัปเดตการแสดงผล */}
+              {subjects.map(s => (
+                <option key={s.subject_id} value={s.subject_id}>
+                  {s.academic_year ? `[${s.academic_year}] ` : ''}
+                  {s.subject_name} {s.section ? `(Sec: ${s.section})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className={styles.formGroup}>
             <label>Upload Images (Min 4)</label>
             <div className={styles.fileDropArea} onClick={() => !isSubmitting && fileInputRef.current?.click()}>
@@ -206,12 +243,14 @@ interface EditStudentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStudentUpdated: () => void;
+  subjects: Subject[];
 }
 
-const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, onClose, onStudentUpdated }) => {
-  if (!student) return null; 
+const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, onClose, onStudentUpdated, subjects }) => {
+  if (!student) return null;
   const [name, setName] = useState('');
   const [studentCode, setStudentCode] = useState('');
+  const [subjectId, setSubjectId] = useState<string>('');
   const [existingFaces, setExistingFaces] = useState<UserFace[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newPreviewUrls, setNewPreviewUrls] = useState<string[]>([]);
@@ -223,6 +262,7 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
     if (student && isOpen) {
       setName(student.name);
       setStudentCode(student.student_code || '');
+      setSubjectId(student.subject_id?.toString() || '');
       setExistingFaces(student.faces || []);
       setNewFiles([]);
       setNewPreviewUrls([]);
@@ -238,7 +278,7 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
     if (event.target.files) {
       const selectedFiles = Array.from(event.target.files);
       if (existingFaces.length + newFiles.length + selectedFiles.length > 50) {
-        setError("สามารถอัปโหลดได้สูงสุด 50 รูป"); 
+        setError("สามารถอัปโหลดได้สูงสุด 50 รูป");
         return;
       }
       setNewFiles(prev => [...prev, ...selectedFiles]);
@@ -256,13 +296,10 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
 
   const handleDeleteExistingFace = async (faceId: number) => {
     if (!window.confirm("Delete this image?")) return;
-    
-    // ✨ เงื่อนไขการลบ: ไม่อนุญาตให้ลบจนเหลือ 0 รูป
-    if (existingFaces.length + newFiles.length <= 1) { 
-        setError("ต้องมีรูปภาพอย่างน้อย 1 รูป"); 
-        return; 
+    if (existingFaces.length + newFiles.length <= 4) {
+      setError(`ต้องมีรูปภาพอย่างน้อย 4 รูป (ห้ามลบ)`);
+      return;
     }
-
     try {
       const res = await fetch(`${BACKEND_URL}/faces/${faceId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
@@ -274,35 +311,49 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-
     const totalImages = existingFaces.length + newFiles.length;
-
-    // ✨ เงื่อนไขใหม่: ถ้ารูปรวมกันน้อยกว่า 4 ต้องเพิ่มให้ครบ 4
     if (totalImages < 4) {
-        setError(`กรุณาเพิ่มรูปภาพให้ครบอย่างน้อย 4 รูป (ขาดอีก ${4 - totalImages} รูป)`);
-        return;
+      setError(`กรุณาเพิ่มรูปภาพให้ครบอย่างน้อย 4 รูป (ขาดอีก ${4 - totalImages} รูป)`);
+      return;
     }
-
     if (!name.trim()) { setError('กรุณากรอกชื่อนักศึกษา'); return; }
     if (!studentCode.trim()) { setError('กรุณากรอกรหัสนักศึกษา'); return; }
-
     setIsSubmitting(true);
     try {
-      if (name !== student.name || studentCode !== student.student_code) {
+      const infoChanged =
+        name !== student.name ||
+        studentCode !== student.student_code ||
+        (student.subject_id?.toString() || '') !== subjectId;
+        
+      const newSubjectId = subjectId ? parseInt(subjectId, 10) : null;
+      let needsTrain = false;
+
+      if (infoChanged) {
         const res = await fetch(`${BACKEND_URL}/users/${student.user_id}`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, student_code: studentCode }),
+          body: JSON.stringify({
+            name,
+            student_code: studentCode,
+            subject_id: newSubjectId
+          }),
         });
         if (!res.ok) throw new Error('Failed to update info');
+        if (name !== student.name) needsTrain = true;
       }
+      
       if (newFiles.length > 0) {
         const formData = new FormData();
         formData.append('user_id', student.user_id.toString());
         newFiles.forEach(f => formData.append('images', f));
         const res = await fetch(`${BACKEND_URL}/faces/upload`, { method: 'POST', body: formData });
         if (!res.ok) throw new Error('Failed to upload images');
+        needsTrain = true;
+      }
+      
+      if (needsTrain) {
         await fetch(`${BACKEND_URL}/train/refresh`, { method: 'POST' });
       }
+      
       onStudentUpdated(); onClose();
     } catch (err: any) { setError(err.message); } finally { setIsSubmitting(false); }
   };
@@ -315,8 +366,27 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
         <button className={styles.closeButton} onClick={onClose}><X size={20} /></button>
         <h2>Edit Student</h2>
         <form onSubmit={handleSave} className={styles.modalForm}>
-          <div className={styles.formGroup}><label>Student ID</label><input type="text" value={studentCode} onChange={e => /^[0-9]*$/.test(e.target.value) && setStudentCode(e.target.value)} disabled={isSubmitting}/></div>
-          <div className={styles.formGroup}><label>Name</label><input type="text" value={name} onChange={e => setName(e.target.value)} disabled={isSubmitting}/></div>
+          <div className={styles.formGroup}><label>Student ID</label><input type="text" value={studentCode} onChange={e => /^[0-9]*$/.test(e.target.value) && setStudentCode(e.target.value)} disabled={isSubmitting} /></div>
+          <div className={styles.formGroup}><label>Name</label><input type="text" value={name} onChange={e => setName(e.target.value)} disabled={isSubmitting} /></div>
+
+          <div className={styles.formGroup}>
+            <label>Subject</label>
+            <select
+              className={styles.controlSelect}
+              value={subjectId}
+              onChange={(e) => setSubjectId(e.target.value)}
+              disabled={isSubmitting}
+            >
+              <option value="">-- Assign to a Subject --</option>
+              {/* ✨ [ 3. แก้ไข ] อัปเดตการแสดงผล */}
+              {subjects.map(s => (
+                <option key={s.subject_id} value={s.subject_id}>
+                  {s.academic_year ? `[${s.academic_year}] ` : ''}
+                  {s.subject_name} {s.section ? `(Sec: ${s.section})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className={styles.formGroup}>
             <label>Existing Images ({existingFaces.length})</label>
@@ -329,22 +399,22 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
               ))}
             </div>
           </div>
-          
+
           <div className={styles.formGroup}>
-             <label>Add More Images</label>
-             <div className={styles.fileDropArea} onClick={() => !isSubmitting && fileInputRef.current?.click()}><UploadCloud size={30} /><p>Click to add</p></div>
-             <input type="file" ref={fileInputRef} multiple accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} disabled={isSubmitting}/>
+            <label>Add More Images</label>
+            <div className={styles.fileDropArea} onClick={() => !isSubmitting && fileInputRef.current?.click()}><UploadCloud size={30} /><p>Click to add</p></div>
+            <input type="file" ref={fileInputRef} multiple accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} disabled={isSubmitting} />
           </div>
           {newPreviewUrls.length > 0 && (
-             <div className={styles.imagePreviewContainer}>
-               {newPreviewUrls.map((url, i) => (
-                 <div key={i} className={styles.imagePreviewItem}><img src={url} alt="New" /><button type="button" className={styles.removeImageButton} onClick={() => removeNewFile(i)}><X size={14}/></button></div>
-               ))}
-             </div>
+            <div className={styles.imagePreviewContainer}>
+              {newPreviewUrls.map((url, i) => (
+                <div key={i} className={styles.imagePreviewItem}><img src={url} alt="New" /><button type="button" className={styles.removeImageButton} onClick={() => removeNewFile(i)}><X size={14} /></button></div>
+              ))}
+            </div>
           )}
 
           {error && <p className={styles.errorText}>{error}</p>}
-          <button type="submit" className={styles.submitButton} disabled={isSubmitting}>{isSubmitting ? <Loader2 className={styles.spinner}/> : 'Save Changes'}</button>
+          <button type="submit" className={styles.submitButton} disabled={isSubmitting}>{isSubmitting ? <Loader2 className={styles.spinner} /> : 'Save Changes'}</button>
         </form>
       </div>
     </div>
@@ -354,20 +424,49 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
 // --- Page Component ---
 const ListStudentPage = () => {
   const [students, setStudents] = useState<User[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<User | null>(null);
 
   const fetchStudents = useCallback(async () => {
-    setIsLoading(true);
     try {
       const res = await fetch(`${BACKEND_URL}/users`);
-      if (!res.ok) throw new Error('Failed to fetch');
+      if (!res.ok) throw new Error('Failed to fetch students');
       setStudents(await res.json());
-    } catch (err) { console.error(err); } finally { setIsLoading(false); }
+    } catch (err) { 
+      console.error(err); 
+      setStudents([]);
+    }
   }, []);
 
-  useEffect(() => { fetchStudents(); }, [fetchStudents]);
+  const fetchSubjects = useCallback(async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/subjects`);
+      if (!res.ok) throw new Error('Failed to fetch subjects');
+      setSubjects(await res.json());
+    } catch (err) { 
+      console.error(err); 
+      setSubjects([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      await Promise.all([
+        fetchStudents(),
+        fetchSubjects()
+      ]);
+      setIsLoading(false);
+    };
+    loadData();
+  }, [fetchStudents, fetchSubjects]);
+
+  const handleDataUpdated = () => {
+    fetchStudents();
+    fetchSubjects();
+  };
 
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`Delete "${name}"?`)) return;
@@ -380,9 +479,9 @@ const ListStudentPage = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <AddStudentModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onStudentAdded={fetchStudents} />
-      <EditStudentModal isOpen={!!editingStudent} onClose={() => setEditingStudent(null)} student={editingStudent} onStudentUpdated={fetchStudents} />
-      
+      <AddStudentModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onStudentAdded={handleDataUpdated} subjects={subjects} />
+      <EditStudentModal isOpen={!!editingStudent} onClose={() => setEditingStudent(null)} student={editingStudent} onStudentUpdated={handleDataUpdated} subjects={subjects} />
+
       <header className={styles.header}>
         <h1 className={styles.headerTitle}>List Students</h1>
         <div className={styles.headerActions}>
@@ -392,7 +491,7 @@ const ListStudentPage = () => {
       </header>
 
       <main className={styles.studentGrid}>
-        {isLoading ? <p>Loading...</p> : students.length === 0 ? <p>No students found.</p> : 
+        {isLoading ? <p>Loading...</p> : students.length === 0 ? <p>No students found.</p> :
           students.map(s => <StudentCard key={s.user_id} student={s} onDelete={handleDelete} onEdit={setEditingStudent} />)
         }
       </main>

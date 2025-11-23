@@ -1,5 +1,3 @@
-// app/(main)/layout.tsx  <-- ไฟล์ใหม่
-
 import Sidebar from "../components/sidebar"; // <-- ตรวจสอบ Path ให้ถูกต้อง
 
 export default function MainLayout({

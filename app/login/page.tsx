@@ -13,7 +13,7 @@ const LoginPage = () => {
           <div className={styles.logoWrapper}>
             {/* โลโก้ Microsoft (รูปยาว) */}
             <Image 
-              src="/Microsoft_logo.png" // ⚠️ ตรวจสอบ path รูปภาพให้ถูกต้อง
+              src="/Microsoft_logo.png" // ตรวจสอบ path รูปภาพให้ถูกต้อง
               alt="Microsoft Logo" 
               width={200}
               height={50}
@@ -30,7 +30,7 @@ const LoginPage = () => {
           <button className={styles.microsoftButton}>
             {/* ไอคอน Microsoft ในปุ่ม (มักเป็นสี่เหลี่ยม 4 สี) */}
             <Image 
-              src="/microsoft-logo.png" // ⚠️ ตรวจสอบ path รูปภาพให้ถูกต้อง
+              src="/microsoft-logo.png" // ตรวจสอบ path รูปภาพให้ถูกต้อง
               alt="Microsoft Icon" 
               width={22} 
               height={22} 

@@ -2,7 +2,6 @@
 
 import React, { useState, FormEvent, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
-// อย่าลืมตรวจสอบ path นี้ให้ตรงกับไฟล์ CSS ที่คุณต้องการใช้จริง
 import styles from '../liststudent/liststudent.module.css';
 
 interface AddSubjectModalProps {
