@@ -1,36 +1,32 @@
 'use client';
 
 import React, { useState, useEffect, useRef, FormEvent, useCallback, useMemo } from 'react';
-import { Settings, Plus, Trash2, X, UploadCloud, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Settings, Plus, Trash2, X, UploadCloud, Image as ImageIcon, Loader2, BookOpen, ChevronLeft, ExternalLink } from 'lucide-react'; // ✨ [แก้ไข] เพิ่ม ExternalLink
 import styles from './liststudent.module.css';
 
 import { useMsal } from "@azure/msal-react";
 import { getAuthToken } from "../../authConfig";
 
 import CapturePhotoModal from './capture-photo-modal'; 
+import ImportStudentModal from './ImportStudentModal'; 
+// ลบ SubjectFormModal/ExternalFormLinkModal ออก
 
 const BACKEND_URL = 'http://localhost:8000';
+// ✨ [ใหม่] URL ของ Google Form ที่ทำสำเนาได้ (Template Link)
+const EXTERNAL_FORM_URL = "https://docs.google.com/forms/d/e/FORM_ID/viewform/TEMPLATE_FOR_COPY"; 
+
 
 // --- Interfaces ---
-interface UserFace {
-  face_id: number;
-  file_path: string;
-}
-
+interface UserFace { face_id: number; file_path: string; }
 interface User {
-  user_id: number;
-  name: string;
-  student_code: string | null;
-  role: string;
-  faces: UserFace[];
-  subject_id: number | null;
+  user_id: number; name: string; student_code: string | null; role: string; faces: UserFace[]; subject_id: number | null;
 }
-
 interface Subject {
   subject_id: number;
   subject_name: string;
   section?: string | null;
   academic_year?: string | null;
+  student_count?: number; 
 }
 
 
@@ -84,7 +80,29 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onDelete, onEdit, su
 };
 
 
-// --- Component: AddStudentModal ---
+// --- Component: SubjectCard (ใหม่) ---
+interface SubjectCardProps {
+  subject: Subject;
+  onClick: () => void;
+}
+const SubjectCard: React.FC<SubjectCardProps> = ({ subject, onClick }) => (
+    <div className={styles.subjectCard} onClick={onClick}>
+      <div className={styles.cardHeader}>
+        <BookOpen size={28} className={styles.cardIcon} />
+        <span className={styles.cardCount}>{subject.student_count || 0} Students</span>
+      </div>
+      <div className={styles.cardInfo}>
+        <span className={styles.cardTitle}>{subject.subject_name}</span>
+        <span className={styles.cardSubtitle}>
+          {subject.academic_year ? `[${subject.academic_year}] ` : ''}
+          {subject.section ? `(Sec: ${subject.section})` : 'No Section'}
+        </span>
+      </div>
+    </div>
+);
+
+
+// --- Component: AddStudentModal (โค้ดเดิม) ---
 interface AddStudentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -97,7 +115,8 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSt
 
   const [name, setName] = useState('');
   const [studentCode, setStudentCode] = useState('');
-  const [selectedSubjectId, setSelectedSubjectId] = useState<number | ''>('');
+  // ✨ [แก้ไข] กำหนดค่าเริ่มต้นเป็น '' ให้ตรงกับ Type (number | '')
+  const [selectedSubjectId, setSelectedSubjectId] = useState<number | ''>(''); 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -353,7 +372,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose, onSt
 };
 
 
-// --- Component: EditStudentModal ---
+// --- Component: EditStudentModal (โค้ดเดิม) ---
 interface EditStudentModalProps {
   student: User | null;
   isOpen: boolean;
@@ -567,15 +586,20 @@ const EditStudentModal: React.FC<EditStudentModalProps> = ({ student, isOpen, on
   );
 };
 
+
 // --- Page Component ---
 const ListStudentPage = () => {
   const { instance, accounts } = useMsal();
 
+  // State สำหรับการควบคุม View
+  const [currentView, setCurrentView] = useState<'subjects' | 'students'>('subjects');
   const [students, setStudents] = useState<User[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false); 
   const [editingStudent, setEditingStudent] = useState<User | null>(null);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
 
   const subjectMap = useMemo(() => {
     const map = new Map<number, string>();
@@ -585,15 +609,24 @@ const ListStudentPage = () => {
     });
     return map;
   }, [subjects]); 
+  
+  const filteredStudents = useMemo(() => {
+      if (currentView === 'subjects') return [];
+      // กรองนักศึกษาตาม Subject ที่ถูกเลือก
+      return students.filter(s => s.subject_id === selectedSubjectId);
+  }, [students, selectedSubjectId, currentView]);
 
-  const fetchStudents = useCallback(async () => {
+
+  const fetchStudents = useCallback(async (subjectId?: number) => {
     if (accounts.length === 0) return;
     
     try {
       const accessToken = await getAuthToken(instance, accounts[0]);
       const headers = { 'Authorization': `Bearer ${accessToken}` };
       
-      const res = await fetch(`${BACKEND_URL}/users`, { headers });
+      // ถ้ามีการส่ง subjectId มา ให้ดึงเฉพาะนักศึกษาของ Subject นั้น
+      const params = subjectId ? `?subject_id=${subjectId}` : '';
+      const res = await fetch(`${BACKEND_URL}/users${params}`, { headers });
       if (!res.ok) throw new Error('Failed to fetch students');
       
       setStudents(await res.json());
@@ -613,7 +646,20 @@ const ListStudentPage = () => {
       const res = await fetch(`${BACKEND_URL}/subjects`, { headers });
       if (!res.ok) throw new Error('Failed to fetch subjects');
       
-      setSubjects(await res.json());
+      const subjectList: Subject[] = await res.json();
+      
+      // ดึง Student Count สำหรับ Subject Cards
+      const subjectsWithCount = await Promise.all(subjectList.map(async (s) => {
+        // ใช้ fetchStudents เพื่อดึงจำนวนนักศึกษา
+        const countRes = await fetch(`${BACKEND_URL}/subjects/${s.subject_id}/student_count`, { headers });
+        if (countRes.ok) {
+          const countData = await countRes.json();
+          return { ...s, student_count: countData.total_students };
+        }
+        return s;
+      }));
+      
+      setSubjects(subjectsWithCount);
     } catch (err) { 
       console.error(err); 
       setSubjects([]);
@@ -625,8 +671,9 @@ const ListStudentPage = () => {
       setIsLoading(true);
       if (accounts.length > 0) {
         await Promise.all([
-          fetchStudents(),
-          fetchSubjects()
+          fetchSubjects(),
+          // โหลดนักศึกษาทั้งหมด (ไม่ใส่ subjectId) เพื่อใช้ใน EditModal/AddModal
+          fetchStudents() 
         ]);
         setIsLoading(false);
       }
@@ -635,59 +682,126 @@ const ListStudentPage = () => {
   }, [fetchStudents, fetchSubjects, accounts]); 
 
   const handleDataUpdated = () => {
-    fetchStudents();
+    // เมื่อมีการอัปเดตข้อมูล ให้รีเฟรชข้อมูล Subject และ Student
     fetchSubjects();
+    fetchStudents(selectedSubjectId || undefined);
   };
+
+  const handleNavigateToSubject = (subjectId: number) => {
+      setSelectedSubjectId(subjectId);
+      setCurrentView('students');
+      fetchStudents(subjectId); // ดึงเฉพาะนักศึกษาใน Subject นั้น
+  };
+  
+  const handleBackToSubjects = () => {
+      setCurrentView('subjects');
+      setSelectedSubjectId(null);
+      fetchStudents(); // โหลดนักศึกษาทั้งหมดอีกครั้ง
+      fetchSubjects(); 
+  }
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Delete "${name}"?`)) return;
+      if (!confirm(`Delete "${name}"?`)) return;
     
-    if (accounts.length === 0) {
-      alert("Not logged in."); return;
-    }
-    
-    try {
-      const accessToken = await getAuthToken(instance, accounts[0]);
+      if (accounts.length === 0) {
+        alert("Not logged in."); return;
+      }
       
-      const res = await fetch(`${BACKEND_URL}/users/${id}`, { 
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
-      if (!res.ok) throw new Error('Failed to delete');
-      setStudents(prev => prev.filter(s => s.user_id !== id));
-    } catch (err: any) { alert(err.message); }
+      try {
+        const accessToken = await getAuthToken(instance, accounts[0]);
+        
+        const res = await fetch(`${BACKEND_URL}/users/${id}`, { 
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+        if (!res.ok) throw new Error('Failed to delete');
+        // อัปเดต State โดยกรองนักศึกษาที่ถูกลบออก และรีเฟรช Subject Count
+        setStudents(prev => prev.filter(s => s.user_id !== id));
+        fetchSubjects(); 
+      } catch (err: any) { alert(err.message); }
   };
 
+  const currentSubject = subjects.find(s => s.subject_id === selectedSubjectId);
+  const currentSubjectName = currentSubject ? subjectMap.get(currentSubject.subject_id) : 'All Students';
+
+
+  // --- Render ---
   return (
     <div className={styles.pageContainer}>
       <AddStudentModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onStudentAdded={handleDataUpdated} subjects={subjects} />
       <EditStudentModal isOpen={!!editingStudent} onClose={() => setEditingStudent(null)} student={editingStudent} onStudentUpdated={handleDataUpdated} subjects={subjects} />
+      {/* Import Modal */}
+      <ImportStudentModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} onImportSuccess={handleDataUpdated} subjects={subjects} />
 
       <header className={styles.header}>
-        <h1 className={styles.headerTitle}>List Students</h1>
+        <h1 className={styles.headerTitle}>
+            {currentView === 'subjects' ? 'Manage Subjects & Roster' : (
+                <button className={styles.backButton} onClick={handleBackToSubjects}>
+                    <ChevronLeft size={24} />
+                    {currentSubjectName}
+                </button>
+            )}
+        </h1>
         <div className={styles.headerActions}>
-          <button className={styles.addButton} onClick={() => setIsAddModalOpen(true)}><Plus size={20} /><span>Add Student</span></button>
+           
+           {/* ✨ [ใหม่] ปุ่มลิงก์ภายนอก */}
+           {currentView === 'subjects' && (
+             <a 
+               href={"https://docs.google.com/forms/d/1CwqFKXeUwgAhlgDdirAoKOhSN1cMvZ3VzZDFGXKuOkw/edit"} 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               className={styles.settingsButton} 
+               style={{ backgroundColor: '#fef3c7', color: '#b45309', borderColor: '#fde68a' }}
+             >
+                <ExternalLink size={20} /><span>Open Registration Form</span> 
+             </a>
+           )}
+
+           <button className={styles.settingsButton} onClick={() => setIsImportModalOpen(true)}>
+             <UploadCloud size={20} /><span>Import Students</span> 
+           </button>
+           
+           <button className={styles.addButton} onClick={() => setIsAddModalOpen(true)}>
+                <Plus size={20} /><span>Add Student</span>
+           </button>
+           
           <button className={styles.settingsButton}><Settings size={20} /><span>SETTINGS</span></button>
         </div>
       </header>
 
       <main className={styles.studentGrid}>
-        {isLoading ? <p>Loading...</p> : students.length === 0 ? <p>No students found.</p> :
-          students.map(s => {
-            const subjectName = s.subject_id ? subjectMap.get(s.subject_id) || null : null;
-            return (
-              <StudentCard 
-                key={s.user_id} 
-                student={s} 
-                subjectName={subjectName} 
-                onDelete={handleDelete} 
-                onEdit={setEditingStudent} 
-              />
-            );
-          })
-        }
+        {isLoading ? <p>Loading...</p> : (
+            currentView === 'subjects' ? (
+                // --- Subject View ---
+                subjects.map(s => (
+                    <SubjectCard 
+                        key={s.subject_id} 
+                        subject={s} 
+                        onClick={() => handleNavigateToSubject(s.subject_id)} 
+                    />
+                ))
+            ) : (
+                // --- Student View ---
+                filteredStudents.length === 0 ? (
+                    <p>No students registered in this subject.</p>
+                ) : (
+                    filteredStudents.map(s => {
+                        const subjectName = s.subject_id ? subjectMap.get(s.subject_id) || null : null;
+                        return (
+                            <StudentCard 
+                                key={s.user_id} 
+                                student={s} 
+                                subjectName={subjectName} 
+                                onDelete={handleDelete} 
+                                onEdit={setEditingStudent} 
+                            />
+                        );
+                    })
+                )
+            )
+        )}
       </main>
     </div>
   );
