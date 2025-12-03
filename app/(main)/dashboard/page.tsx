@@ -248,14 +248,21 @@ const FacultyDashboardPage = () => {
         const headers = { "Authorization": `Bearer ${accessToken}` };
         
         const response = await fetch(`${BACKEND_URL}/api/faculty/subjects`, { headers });
-        if (!response.ok) throw new Error('Failed to fetch subjects');
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to fetch subjects: ${response.status} - ${errorText}`);
+        }
         
         const data: ISubject[] = await response.json();
         setSubjects(data);
         if (data.length > 0) {
           setSelectedSubject(data[0].id);
         }
-      } catch (error) { console.error("Error fetching subjects:", error); }
+      } catch (error) { 
+        console.error("Error fetching subjects:", error); 
+        setSubjects([]);
+      }
     };
     fetchSubjects();
   }, [instance, accounts]); 
@@ -487,8 +494,8 @@ const FacultyDashboardPage = () => {
           <label htmlFor="subject-select">
             <ChevronDown size={16} /> วิชา (Subject):
           </label>
-          <select id="subject-select" value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)} >
-            <option value="" disabled>Loading subjects...</option>
+          <select id="subject-select" value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)} disabled={subjects.length === 0}>
+            {subjects.length === 0 && <option value="" disabled>No subjects found</option>}
             {subjects.map(subject => (
               <option key={subject.id} value={subject.id}>{subject.name}</option>
             ))}
@@ -517,8 +524,10 @@ const FacultyDashboardPage = () => {
           
           {isSessionLoading ? (
             <div className={styles.loadingBox}><Loader2 className={styles.spinner} /> Loading...</div>
+          ) : subjects.length === 0 ? (
+            <p>Please create a subject on the List Student page first.</p>
           ) : !sessionData ? (
-            <p>No data available for this session.</p>
+            <p>No data available for this session or subject.</p>
           ) : (
             <>
               <div className={styles.statsGrid} style={{gridTemplateColumns: 'repeat(3, 1fr)'}}>
@@ -611,8 +620,10 @@ const FacultyDashboardPage = () => {
           
           {isSemesterLoading ? (
             <div className={styles.loadingBox}><Loader2 className={styles.spinner} /> Loading...</div>
+          ) : subjects.length === 0 ? (
+            <p>Please create a subject on the List Student page first.</p>
           ) : !semesterData ? (
-            <p>No data available for this semester.</p>
+            <p>No data available for this semester or subject.</p>
           ) : (
             <>
               <div className={styles.statsGrid}>

@@ -6,7 +6,6 @@ import styles from './liststudent.module.css';
 
 const BACKEND_URL = 'http://localhost:8000'; 
 
-// --- Interfaces ---
 interface CapturePhotoModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,7 +14,6 @@ interface CapturePhotoModalProps {
   camId: string;
 }
 
-// --- Component: CapturePhotoModal ---
 const CapturePhotoModal: React.FC<CapturePhotoModalProps> = ({ isOpen, onClose, onCapture, authToken, camId }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,7 +39,6 @@ const CapturePhotoModal: React.FC<CapturePhotoModalProps> = ({ isOpen, onClose, 
     }
   }, [capturedImageBlob]);
 
-  // Function to control Backend Camera
   const controlBackendCamera = useCallback(async (action: 'open' | 'close') => {
     if (!authToken || !camId) return;
     try {
@@ -66,14 +63,11 @@ const CapturePhotoModal: React.FC<CapturePhotoModalProps> = ({ isOpen, onClose, 
        return;
     }
 
-    // 1. Close Backend Camera first
     await controlBackendCamera('close');
     
-    // 2. Add delay to ensure OS releases the camera lock
     await new Promise(resolve => setTimeout(resolve, 1000)); 
     
     try {
-      // 3. Request Frontend Camera access
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { width: { ideal: 640 }, height: { ideal: 480 } }, 
         audio: false 
@@ -175,10 +169,8 @@ const CapturePhotoModal: React.FC<CapturePhotoModalProps> = ({ isOpen, onClose, 
         
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%', maxWidth: '450px', margin: '0 auto' }}>
           
-          {/* Status Display */}
           <div style={{ padding: '1rem 0', display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
             
-            {/* Live Video / Placeholder */}
             {(mode === 'loading' || mode === 'live' || mode === 'error') && (
               <div style={{ position: 'relative', width: '100%', maxWidth: '400px', height: '300px', backgroundColor: '#333', borderRadius: '0.5rem' }}>
                 <video 
@@ -210,7 +202,6 @@ const CapturePhotoModal: React.FC<CapturePhotoModalProps> = ({ isOpen, onClose, 
               </div>
             )}
 
-            {/* Preview Image */}
             {mode === 'preview' && capturedImageBlob && (
                 <img 
                     src={URL.createObjectURL(capturedImageBlob)} 
@@ -222,7 +213,6 @@ const CapturePhotoModal: React.FC<CapturePhotoModalProps> = ({ isOpen, onClose, 
             <canvas ref={canvasRef} style={{ display: 'none' }} />
           </div>
         
-          {/* Actions */}
           {isLive && (
              <button 
                 type="button" 

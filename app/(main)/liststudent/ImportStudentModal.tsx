@@ -1,18 +1,16 @@
-// ImportStudentModal.tsx (แก้ไขสมบูรณ์สำหรับ XLSX Roster Import)
 'use client'; 
 
 import React, { useState, FormEvent, useCallback, useEffect, useRef } from 'react';
-import { X, UploadCloud, Loader2, Download, FileText, Camera, FileUp } from 'lucide-react'; 
+import { X, Loader2, FileUp, ExternalLink } from 'lucide-react'; 
 import { useMsal } from "@azure/msal-react";
 import { getAuthToken } from "../../authConfig";
 
-import * as XLSX from 'xlsx'; 
-import { saveAs } from 'file-saver'; 
 import styles from './liststudent.module.css';
 
 const BACKEND_URL = 'http://localhost:8000';
 
-// --- Interfaces ---
+const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/1CwqFKXeUwgAhlgDdirAoKOhSN1cMvZ3VzZDFGXKuOkw/copy"; 
+
 interface Subject {
   subject_id: number;
   subject_name: string;
@@ -27,46 +25,16 @@ interface ImportStudentModalProps {
   subjects: Subject[];
 }
 
-// --- Helper Function: Generate Template (สำหรับ XLSX) ---
-const generateTemplate = (subjectId: number | '') => {
-    // Column Header ที่จำเป็นสำหรับการ Import (ตามที่ Backend main.py คาดหวัง: student_code, name)
-    const headers = ["student_code", "name"]; 
-    
-    // ข้อมูลตัวอย่าง
-    const data = [
-        headers,
-        ['22045', 'สมชาย ใจดี'],
-        ['22046', 'สมหญิง สุขใจ'],
-        ['22xxx', 'Example Name'] 
-    ];
-    
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    
-    ws['!cols'] = [
-        { wch: 15 }, 
-        { wch: 20 }, 
-    ];
-    
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Student_Roster");
-    
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); 
-};
-
-
-// --- Component ---
 const ImportStudentModal: React.FC<ImportStudentModalProps> = ({ isOpen, onClose, onImportSuccess, subjects }) => {
   const { instance, accounts } = useMsal();
   
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | ''>('');
-  const [rosterFile, setRosterFile] = useState<File | null>(null); // ✨ [แก้ไข] รับ rosterFile
+  const [rosterFile, setRosterFile] = useState<File | null>(null); 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const rosterInputRef = useRef<HTMLInputElement>(null); // ✨ [แก้ไข] เปลี่ยนชื่อ ref
+  const rosterInputRef = useRef<HTMLInputElement>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
 
-  // Get Auth Token on mount
   useEffect(() => {
     if (isOpen && accounts.length > 0) {
       getAuthToken(instance, accounts[0]).then(setAuthToken).catch(() => setAuthToken(null));
@@ -91,7 +59,6 @@ const ImportStudentModal: React.FC<ImportStudentModalProps> = ({ isOpen, onClose
       const file = event.target.files[0];
       const nameLower = file.name.toLowerCase();
 
-      // ✨ [แก้ไข] รับไฟล์ XLSX/CSV
       if (nameLower.endsWith('.xlsx') || nameLower.endsWith('.xls') || nameLower.endsWith('.csv')) {
         setRosterFile(file);
         setError('');
@@ -102,18 +69,6 @@ const ImportStudentModal: React.FC<ImportStudentModalProps> = ({ isOpen, onClose
     }
   };
   
-  const handleDownloadTemplate = () => {
-      if (!selectedSubjectId) {
-          setError('กรุณาเลือก Subject ก่อนดาวน์โหลด Template');
-          return;
-      }
-      const blob = generateTemplate(selectedSubjectId);
-      const subjectName = subjects.find(s => s.subject_id === selectedSubjectId)?.subject_name || 'Roster_Template';
-      saveAs(blob, `${subjectName}_Roster_Template.xlsx`); 
-  };
-
-
-  // --- Submission Logic: Import Roster Only (.xlsx/.csv) ---
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
@@ -127,9 +82,8 @@ const ImportStudentModal: React.FC<ImportStudentModalProps> = ({ isOpen, onClose
     try {
       const formData = new FormData();
       formData.append('subject_id', selectedSubjectId.toString());
-      formData.append('roster_file', rosterFile); // ✨ [แก้ไข] ส่ง roster_file
+      formData.append('roster_file', rosterFile); 
       
-      // ✨ [สำคัญ] Endpoint ใหม่สำหรับ Import Roster เท่านั้น
       const res = await fetch(`${BACKEND_URL}/users/import/roster`, {
         method: 'POST',
         headers: {
@@ -142,10 +96,8 @@ const ImportStudentModal: React.FC<ImportStudentModalProps> = ({ isOpen, onClose
         const errData = await res.json();
         throw new Error(errData.detail || 'Failed to import students roster');
       }
-
-      // ไม่จำเป็นต้อง Train AI/Refresh หน้าหลัก เนื่องจากไม่มีรูปภาพเข้ามา
       
-      onImportSuccess(); // Refresh หน้าหลัก
+      onImportSuccess(); 
       onClose();
     } catch (err: any) {
       setError(err.message || "เกิดข้อผิดพลาดในการ Import ข้อมูล");
@@ -160,13 +112,11 @@ const ImportStudentModal: React.FC<ImportStudentModalProps> = ({ isOpen, onClose
     <div className={styles.modalBackdrop} onClick={onClose} style={{ zIndex: 1200 }}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <button className={styles.closeButton} onClick={onClose}><X size={20} /></button>
-        <h2>Import Students Roster (Batch)</h2>
-        <p>นำเข้าบัญชีรายชื่อนักศึกษาจำนวนมาก (ไม่รวมรูปภาพ) เพื่อสร้างบัญชีผู้ใช้</p>
-        
+  
         <form onSubmit={handleSubmit} className={styles.modalForm}>
           
           <div className={styles.formGroup}>
-            <label>1. Select Target Subject <span style={{ color: '#ef4444' }}>*</span></label>
+            <label>1. Select Target Subject <span style={{ color: '#dc2626' }}>*</span></label>
             <select
               className={styles.controlSelect}
               value={selectedSubjectId}
@@ -185,33 +135,35 @@ const ImportStudentModal: React.FC<ImportStudentModalProps> = ({ isOpen, onClose
           </div>
           
           <div className={styles.formGroup}>
-              <label>Template & Instructions</label>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                      <FileText size={14} style={{ display: 'inline', marginRight: '5px' }} />
-                      ดาวน์โหลด Template (.xlsx) เพื่อกรอกรายชื่อ
-                  </p>
-                  <button 
-                      type="button" 
-                      onClick={handleDownloadTemplate} 
-                      className={styles.settingsButton} 
-                      disabled={isSubmitting || !selectedSubjectId} 
+              <label>Registration Form / Sheet Source</label>
+              <div className={styles.formInstructionBox} style={{padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                  
+                  <a 
+                      href={GOOGLE_FORM_URL} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className={styles.openFormButton} 
+                      style={{ 
+                          width: '100%', 
+                          justifyContent: 'center', 
+                          padding: '0.75rem 1rem' 
+                      }}
                   >
-                      <Download size={16} /> Template
-                  </button>
+                      <ExternalLink size={20} /> Open Registration Form
+                  </a>
               </div>
-              <p style={{ fontSize: '0.8rem', color: '#ef4444' }}>
-                  **คำเตือน:** Template ที่กรอกแล้วต้องมีคอลัมน์ **student\_code** และ **name** ตรงตามที่กำหนดเท่านั้น
+              
+              <p className={styles.rosterWarningText}>
+                  **คำเตือน** ไฟล์ที่ Export จาก Google Sheet ต้องมีคอลัมน์ student_code, name, และ face_id_1 ถึง face_id_4 (รวม 6 คอลัมน์) โดยลิงก์รูปภาพต้องเป็นสาธารณะ
               </p>
           </div>
           
           <div className={styles.formGroup}>
-            <label>2. Upload Roster File (.xlsx/.csv) <span style={{ color: '#ef4444' }}>*</span></label>
+            <label>2. Upload Roster File (.xlsx/.csv) <span style={{ color: '#dc2626' }}>*</span></label>
             <div className={styles.fileDropArea} onClick={() => !isSubmitting && rosterInputRef.current?.click()}>
               <FileUp size={30} />
               <p>{rosterFile ? rosterFile.name : 'Click to select XLSX/CSV file'}</p>
             </div>
-            {/* ✨ [แก้ไข] Accept file types ให้รองรับ XLSX/CSV */}
             <input type="file" ref={rosterInputRef} accept=".xlsx,.xls,.csv" onChange={handleFileChange} style={{ display: 'none' }} disabled={isSubmitting} />
           </div>
           
